@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=budgetbuddy
+POSTGRES_USER=xwtrcpnGCdSoRQZEYSJsRKSEgEVpwMPY
+POSTGRES_PASSWORD=BubabJWMNmDJp0rqPSuKV9qkYs5G7AgBdf2Y0cment8vUPHxNI81dTCfLll8aQZQ
