@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from .models import Paycheck, PayType, Deduction, Paystub
 from .forms import DeductionForm
+import re
 
 
 def index(request, paycheck_id=1):
@@ -21,13 +22,13 @@ def index(request, paycheck_id=1):
 
     # paycheck data
     paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
-    pay_type = get_object_or_404(PayType, pk=paycheck.paychecks_per_year, user=user)
+    pay_type = get_object_or_404(PayType, pk=paycheck.paychecks_per_year)
 
     # calculate take home pay (paycheck gross - all deductions)
     deductions_list = Deduction.objects.filter(paycheck=paycheck, active=True, user=user)
     paycheck_gross = round(paycheck.annual_salary/paycheck.paychecks_per_year, 2)
     deduction_total = deductions_list.aggregate(Sum('amount'))['amount__sum'] or 0
-    deduction_form = DeductionForm(initial={'paycheck': paycheck})
+    deduction_form = DeductionForm(initial={'paycheck': paycheck, 'user': request.user})
 
     # paystub data
     paystubs_list = Paystub.objects.order_by('end_date').filter(paycheck=paycheck, user=user)
@@ -52,6 +53,8 @@ def index(request, paycheck_id=1):
 def create_deduction(request):
     if request.method == 'POST':
         paycheck_id = request.POST['paycheck']
+        # double check to make sure user has access to object
+        get_object_or_404(Paycheck, pk=paycheck_id, user=request.user)
         deduction = DeductionForm(request.POST)
         if deduction.is_valid():
             deduction.save()
@@ -65,15 +68,22 @@ class DeductionUpdateView(UserPassesTestMixin, UpdateView):
     template_name = 'paychecks/deduction_update.html'
 
     def test_func(self):
-        print(self.request)
-        return True
+        path = self.request.path
+        deduction_id = re.search('deduction/(.*)/edit', path).group(1)
+        return Deduction.objects.filter(pk=deduction_id, user=self.request.user)
 
     def get_success_url(self):
+        get_object_or_404(Paycheck, self.object.paycheck.id, user=self.request.user)
         return reverse('paycheck', args=(self.object.paycheck.id,))
 
 
-class DeductionDeleteView(DeleteView):
+class DeductionDeleteView(UserPassesTestMixin, DeleteView):
     model = Deduction
+
+    def test_func(self):
+        path = self.request.path
+        deduction_id = re.search('deduction/(.*)/delete', path).group(1)
+        return Deduction.objects.filter(pk=deduction_id, user=self.request.user)
 
     def get_success_url(self):
         return reverse('paycheck', args=(self.object.paycheck.id,))
