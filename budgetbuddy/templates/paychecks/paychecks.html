@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% block title %}
+View Paychecks
+{% endblock title %}
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">
+    <form action="{% url 'paychecks' %}">
+      <select name="paycheck_id" id="paycheck_id" onChange="form.submit();">
+        {% for pc in paychecks %}
+        <option value="{{ pc.id }}" {% if paycheck == pc %} selected {% endif %}>{{ pc }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </h1>
+</div>
+<!-- Salary and final take home pay -->
+<div class="row justify-content-center">
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header py-3 text-center">
+        <h6 class="m-0">Salary</h6>
+      </div>
+      <div class="h5 card-body text-center text-primary font-weight-bold">
+        ${{ paycheck.annual_salary | intcomma }}
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header py-3 text-center">
+        <h6 class="m-0">Final Take Home Pay (per paycheck)</h6>
+      </div>
+      <div class="h5 card-body text-center text-success font-weight-bold">
+        ${{ take_home_pay | intcomma }}
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End of salary/take home pay -->
+<div class="row">
+  <!-- Paycheck Info -->
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0">Gross Pay</h6>
+      </div>
+      <div class="card-body h5">
+        <ul class="list-group">
+          <li class="list-group-item">
+            <strong>${{ paycheck_gross | intcomma }}</strong> Gross Pay
+          </li>
+          <li class="list-group-item"><strong>{{ pay_type }}</strong> Pay Period</li>
+          <li class="list-group-item"><strong>{{ paycheck.paychecks_per_year }}</strong> Paychecks Per Year</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- End of Paycheck Info -->
+  <!-- Deductions -->
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0">Deductions</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-2">
+          <a href="#modalAdd" class="btn btn-success" data-toggle="modal"><i class="fas fa-plus"></i> <span>Add New Deduction</span></a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Deduction</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for deduction in deductions %}
+              <tr>
+                <td>{{ deduction.description }}</td>
+                <td>{{ deduction.deduction_type }}</td>
+                <td>${{ deduction.amount | intcomma }}</td>
+                <td>
+                  <div class="row">
+                    <form action="{% url 'deduction_edit' deduction.id %}" method="get">
+                      <button class="fas fa-edit text-edit"></button>
+                    </form>
+                    <form action="{% url 'deduction_delete' deduction.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete?');">
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <th class="text-center" id="total" colspan="2">Total :</th>
+                <td>${{ deduction_total | intcomma }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End of Deductions -->
+  <!-- Received Paychecks -->
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0">Received Paycheck</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-2">
+          <a href="#modalAddPaycheck" class="btn btn-success" data-toggle="modal"><i class="fas fa-plus"></i> <span>Add New Paycheck</span></a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Pay Period Spent</th>
+                <th>Gross Pay</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for paystub in paystubs %}
+              <tr>
+                <td>{{ paystub.end_date}}</td>
+                <td>to do</td>
+                <td>${{ paystub.gross_pay | intcomma }}</td>
+                <td>
+                  <a href="#deleteEmployeeModal" class="delete" data-toggle="modal" data-target="#modalPaycheckDelete">
+                    <i class="fas fa-trash text-red" data-toggle="tooltip" title="Delete"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+            {% if paystubs.has_other_pages %}
+            <ul class="pagination">
+              {% if paystubs.has_previous %}
+              <li class="page_item">
+                <a href="?page={{paystubs.previous_page_number}}" class="page-link">&laquo;</a>
+              </li>
+              {% else %}
+              <li class="page_item disabled">
+                <a class="page-link">&laquo;</a>
+              </li>
+              {% endif %}
+              {% for i in paystubs.paginator.page_range %}
+              {% if paystubs.number == i %}
+              <li class="page-item active">
+                <a class="page-link">{{i}}</a>
+              </li>
+              {% else %}
+              <li class="page-item">
+                <a href="?page={{i}}" class="page-link">{{i}}</a>
+              </li>
+              {% endif %}
+              {% endfor %}
+              {% if paystubs.has_next %}
+              <li class="page_item">
+                <a href="?page={{paystubs.next_page_number}}" class="page-link">&raquo;</a>
+              </li>
+              {% else %}
+              <li class="page_item disabled">
+                <a class="page-link">&raquo;</a>
+              </li>
+              {% endif %}
+            </ul>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End of Paystubs -->
+</div>
+{% endblock content %}
+<!-- End of Page Wrapper -->
+{% block modal %}
+<!-- Logout Modal-->
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+        <a class="btn btn-primary" href="login.html">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Add Paycheck -->
+<div class="modal fade addNewInputs" id="modalAddPaycheck" tabindex="-1" role="dialog" aria-labelledby="modalAddPaycheck" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold text-primary ml-5">Add new form</h4>
+        <button type="button" class="close text-primary" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <label data-error="wrong" data-success="right" for="inputDate">Paycheck Date</label>
+        <div class="md-form mb-5">
+          <input class="form-control mb-2" type="date" placeholder="2019-03-12" id="inputDate">
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-center buttonAddFormWrapper">
+        <button class="btn btn-outline-primary btn-block buttonAdd" data-dismiss="modal">Add form
+          <i class="fas fa-paper-plane-o ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Add -->
+<div class="modal fade addNewInputs" id="modalAdd" tabindex="-1" role="dialog" aria-labelledby="modalAdd" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold text-primary ml-5">Add new deduction</h4>
+        <button type="button" class="close text-primary" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <form action="{% url 'deduction_add' %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="paycheck_id" value="{{ paycheck.id }}">
+          {% crispy deduction_form %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Edit -->
+<div class="modal fade modalEditClass" id="modalEdit" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold text-secondary ml-5">Edit form</h4>
+        <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <label data-error="wrong" data-success="right" for="inputDesc">Deduction</label>
+        <div class="md-form mb-5">
+          <input type="text" class="form-control" id="inputDesc" value="FICA Social Security" required>
+        </div>
+        <label data-error="wrong" data-success="right" for="inputAccountSelect">Type</label>
+        <div class="md-form mb-5">
+          <select class="form-control mb-2" id="inputAccountSelect" required>
+            <option disabled>-- select pre or post-tax --</option>
+            <option selected>Pre-Tax</option>
+            <option>Post-Tax</option>
+          </select>
+        </div>
+        <label data-error="wrong" data-success="right" for="inputAmount">Amount</label>
+        <div class="input-group mb-5">
+          <div class="input-group-prepend">
+            <div class="input-group-text">$</div>
+          </div>
+          <input type="text" class="form-control" id="inputAmount" value="165.50" required>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-center editInsideWrapper">
+        <button class="btn btn-outline-warning btn-block editInside" data-dismiss="modal">Edit
+          form
+          <i class="fas fa-paper-plane-o ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- Modal Delete -->
+<div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDelete" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold ml-5 text-danger">Delete</h4>
+        <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <p class="text-center h4">Are you sure to delete selected row?</p>
+      </div>
+      <div class="modal-footer d-flex justify-content-center deleteButtonsWrapper">
+        <button type="button" class="btn btn-danger btnYesClass" id="btnYes" data-dismiss="modal">Yes</button>
+        <button type="button" class="btn btn-primary btnNoClass" id="btnNo" data-dismiss="modal">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Paycheck Delete -->
+<div class="modal fade" id="modalPaycheckDelete" tabindex="-1" role="dialog" aria-labelledby="modalPaycheckDelete" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold ml-5 text-danger">Delete</h4>
+        <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <p class="text-center h4">Are you sure to delete paycheck?</p>
+      </div>
+      <div class="modal-footer d-flex justify-content-center deleteButtonsWrapper">
+        <button type="button" class="btn btn-danger btnYesClass" id="btnYes" data-dismiss="modal">Yes</button>
+        <button type="button" class="btn btn-primary btnNoClass" id="btnNo" data-dismiss="modal">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock modal %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% block title %}
+Edit Deduction
+{% endblock title %}
+{% block content %}
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <select name="paycheck_id" id="paycheck_id" onChange="form.submit();">
+        <option selected>{{ object.paycheck }}</option>
+      </select>
+    </h1>
+  </div>
+  <!-- Salary and final take home pay -->
+  <div class="row justify-content-center">
+    <div class="col-xl-4">
+      <div class="card mb-4">
+        <div class="card-header py-3 text-center">
+          <h6 class="m-0">Salary</h6>
+        </div>
+        <div class="h5 card-body text-center text-primary font-weight-bold">
+          ${{ object.paycheck.annual_salary | intcomma }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End of salary/take home pay -->
+  <div class="row">
+    <div class="container-fluid">
+      {% csrf_token %}
+      {% crispy form %}
+    </div>
+  </div>
+{% endblock content %}

@@ -37,6 +37,10 @@
     }
   });
 
+  $(document).on('click', '.confirm-delete', function(){
+    return confirm('Are you sure you want to delete this?');
+  })
+
   // Smooth scrolling using jQuery easing
   $(document).on('click', 'a.scroll-to-top', function(e) {
     var $anchor = $(this);
