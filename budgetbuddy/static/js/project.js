@@ -7,3 +7,18 @@
   })
 
 })(jQuery); // End of use strict
+
+// Call the dataTables jQuery plugin
+$(document).ready(function() {
+  $('#transTable').DataTable({
+    "order": [[ 0, "desc" ]]
+  });
+
+  $('#moneyInput').blur(function() {
+    this.value = parseFloat(this.value).toFixed(2);
+  });
+
+  $('#moneyInput2').blur(function() {
+    this.value = parseFloat(this.value).toFixed(2);
+  });
+});

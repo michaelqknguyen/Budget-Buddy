@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% block title %}
+Account Overview
+{% endblock title %}
+{% block content %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Accounts</h1>
+    <div class="custom-control custom-checkbox small">
+      <input type="checkbox" class="custom-control-input" id="customCheck">
+      <label class="custom-control-label" for="customCheck">Show Inactive Accounts</label>
+    </div>
+  </div>
+  <div class="row">
+    <!-- Earnings (Monthly) Card Example -->
+    {% for account in maccounts %}
+    <div class="col-xl-3a col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <a href="{% url 'money_account' account.id %}" class="nav-tabs">
+                <div class="text-xs font-weight-bold 
+                {% if account.account_type.account_type == 'Credit Card' %}
+                    text-primary
+                {% else %}
+                    text-success
+                {% endif %}
+                text-uppercase mb-1">{{ account.name }}</div>
+              </a>
+              <div class="h5 mb-0 font-weight-bold text-red">-$416.04</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas 
+              {% if account.account_type.account_type == 'Credit Card' %}
+                fa-credit-card
+              {% else %}
+                fa-piggy-bank
+              {% endif %} fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+<!-- /.container-fluid -->
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Flex</h1>
+  </div>
+  <div class="row">
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-3a col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <a href="{% url 'budget_account' flex_account.id %}" class="nav-tabs">
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{{ flex_account.name }}</div>
+              </a>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">$4,416.04</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-funnel-dollar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.container-fluid -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Expenses/Savings</h1>
+    <div class="custom-control">
+      <a href="{% url 'budget_account_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Expense/Saving</span></a>
+    </div>
+  </div>
+  <!-- Table -->
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Expense</th>
+              <th>Type</th>
+              <th>Monthly Contribution</th>
+              <th>Annual Contribution</th>
+              <th>Currently Have</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for account in budget_accounts %}
+            <tr>
+              <td>
+                <a href="{% url 'budget_account' account.id %}" class="nav">{{ account.name }}</a>
+              </td>
+              <td>{{ account.account_type }}</td>
+              <td>${{ account.monthly_contribution | floatformat:2 | intcomma}}</td>
+              <td>${{ account.annual_contribution | floatformat:2 | intcomma}}</td>
+              <td class="text-money">$13,576.92</td>
+              <td>
+                <div class="row">
+                  <form action="{% url 'budget_account_edit' account.id %}" method="get">
+                    <button class="fas fa-edit text-edit"></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End of Main Content -->
+{% endblock content %}
+<!-- End of Page Wrapper -->

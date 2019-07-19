@@ -59,6 +59,8 @@ def create_deduction(request):
         if deduction.is_valid():
             deduction.save()
             messages.success(request, 'New deduction has been added')
+        else:
+            messages.error(request, "Error creating dedeuction")
         return redirect('/paychecks/'+paycheck_id)
 
 
@@ -73,7 +75,7 @@ class DeductionUpdateView(UserPassesTestMixin, UpdateView):
         return Deduction.objects.filter(pk=deduction_id, user=self.request.user)
 
     def get_success_url(self):
-        get_object_or_404(Paycheck, self.object.paycheck.id, user=self.request.user)
+        get_object_or_404(Paycheck, pk=self.object.paycheck.id, user=self.request.user)
         return reverse('paycheck', args=(self.object.paycheck.id,))
 
 

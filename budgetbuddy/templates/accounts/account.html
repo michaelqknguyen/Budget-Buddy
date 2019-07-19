@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}
+Account Overview
+{% endblock title %}
+{% block content %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <select name="selectView" id="selectView" onChange="window.location.href=this.value">
+        <option value="{% url 'all_accounts' %}">All Accounts</option>
+        {% for account in accounts %}
+        <option value="/budget/{{ account.money_or_budget }}/{{ account.id }}" {% if account == active_account %} selected {% endif %}>{{ account }}</option>
+        {% endfor %}
+      </select>
+    </h1>
+    <div class="d-none d-sm-inline-block">
+      <form>
+        <div class="form-row align-items-center">
+          <div class="col-auto mb-2">Date Range</div>
+          <form method="GET">
+            <div class="col-auto"><input class="form-control mb-2" type="date" value="{{ start_date|date:"Y-m-d" }}" name="start_date"></div>
+            <div class="col-auto mb-2">-</div>
+            <div class="col-auto"><input class="form-control mb-2" type="date" value="{{ end_date|date:"Y-m-d"}}" name="end_date"></div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary mb-2">Go</button>
+            </div>
+          </form>
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- Content Row -->
+  <div class="row">
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Balance</div>
+              <div class="h5 mb-0 font-weight-bold 
+              {% if balance < 0 %}
+              text-danger
+              {% else %}
+              text-gray-800
+              {% endif %}">${{ balance | intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Spent (in time frame)</div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div class="h5 mb-0 mr-3 font-weight-bold 
+                  {% if time_frame_spent >= 0 %}
+                  text-success
+                  {% else %}
+                  text-danger
+                  {% endif %}">${{ time_frame_spent | intcomma }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Pending Requests Card Example -->
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Number of Transactions (in time frame)</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ num_transactions }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-comments fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Content Row -->
+  <!-- DataTales Example -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Transactions</h1>
+  </div>
+  <!-- Collapsable Card Example -->
+  <div class="card shadow mb-4">
+    <!-- Card Header - Accordion -->
+    <a href="#collapseCardExample" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample">
+      <h6 class="m-0 font-weight-bold text-primary">Add New Transaction</h6>
+    </a>
+    <!-- Card Content - Collapse -->
+    <div class="collapse show" id="collapseCardExample">
+      <div class="card-body">
+        <form action="{% url 'transaction_create' %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
+          <input type="hidden" name="user" value="{{ user.id }}">
+          <div class="form-row align-items-center">
+            <div class="col-auto">
+              <label class="sr-only" for="transaction_date">Transaction Date</label>
+              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus>
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="description">Description</label>
+              <input type="text" class="form-control mb-2" name="description" placeholder="Description">
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="amount_spent">Amount</label>
+              <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">$</div>
+                </div>
+                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput" placeholder="0.00">
+              </div>
+            </div>
+            <div class="col-auto">
+              <label for="money_account" class="sr-only"></label>
+              <select class="form-control mb-2" name="money_account">
+                <option selected disabled>-- select account --</option>
+                {% if active_account.money_or_budget == 'm' %}
+                <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
+                {% else %}
+                  {% for account in money_accounts %}
+                  <option value="{{ account.id }}">{{ account }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <label for="budget_account" class="sr-only"></label>
+              <select class="form-control mb-2" name="budget_account">
+                <option selected disabled>-- select category --</option>
+                {% if active_account.money_or_budget == 'b' %}
+                <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
+                {% else %}
+                  {% for account in budget_accounts %}
+                  <option value="{{ account.id }}">{{ account }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary mb-2">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Collapsable Card Example -->
+  <div class="card shadow mb-4">
+    <!-- Card Header - Accordion -->
+    <a href="#collapseCardExample2" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample2">
+      <h6 class="m-0 font-weight-bold text-primary">Transfer</h6>
+    </a>
+    <!-- Card Content - Collapse -->
+    <div class="collapse" id="collapseCardExample2">
+      <div class="card-body">
+        <form action="{% url 'transaction_transfer' %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
+          <input type="hidden" name="user" value="{{ user.id }}">
+          <div class="form-row align-items-center">
+            <div class="col-auto">
+              <label class="sr-only" for="transaction_date">Transaction Date</label>
+              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus>
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="amount_spent">Amount</label>
+              <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">$</div>
+                </div>
+                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput2" placeholder="0.00">
+              </div>
+            </div>
+            <div class="col-auto">
+              <label for="fromAccount" class="sr-only"></label>
+              <select class="form-control mb-2" name="fromAccount">
+                <option selected disabled>-- select transfer from account --</option>
+                {% if active_account %}
+                <option value='{"account_id": {{active_account.id}}, "money_or_budget": "{{active_account.money_or_budget}}"}' selected>{{ active_account }}</option>
+                {% else %}
+                  {% for account in accounts %}
+                    <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <label for="toCardSelect" class="sr-only"></label>
+              <select class="form-control mb-2" name="toAccount">
+                <option selected disabled>-- select transfer to account --</option>
+                {% if active_account.money_or_budget == 'm' %}
+                  {% for account in money_accounts %}
+                  <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>
+                  {% endfor %}
+                {% elif active_account.money_or_budget == 'b' %}
+                  {% for account in budget_accounts %}
+                  <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>
+                  {% endfor %}
+                {% else %}
+                  {% for account in accounts %}
+                    <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary mb-2">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="transTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Account</th>
+              <th>Category</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for transaction in transactions %}
+            <tr>
+              <td>{{ transaction.transaction_date | date:"Y-m-d" }}</td>
+              <td>{{ transaction.description }}</td>
+              <td class="{% if transaction.amount_spent < 0 %}
+                  text-danger
+                  {% else %}
+                  text-success
+                  {% endif %}">${{ transaction.amount_spent | intcomma }}</td>
+              <td>{{ transaction.money_account }}</td>
+              <td>{{ transaction.budget_account }}</td>
+              <td>
+                <div class="row">
+                  {% if active_account.money_or_budget == 'm' %}
+                  <form action="{% url 'transaction_edit_m' transaction.id %}" method="get">
+                  {% elif active_account.money_or_budget == 'b' %}
+                  <form action="{% url 'transaction_edit_b' transaction.id %}" method="get">
+                  {% else %}
+                  <form action="{% url 'transaction_edit' transaction.id %}" method="get">
+                  {% endif %}
+                    <button class="fas fa-edit text-edit"></button>
+                  </form>
+                  {% if active_account.money_or_budget == 'm' %}
+                  <form action="{% url 'transaction_delete_m' transaction.id %}" method="post">
+                  {% elif active_account.money_or_budget == 'b' %}
+                  <form action="{% url 'transaction_delete_b' transaction.id %}" method="post">
+                  {% else %}
+                  <form action="{% url 'transaction_delete' transaction.id %}" method="post">
+                  {% endif %}
+                    {% csrf_token %}
+                    <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete?');">
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- /.container-fluid -->
+  <!-- End of Main Content -->
+  <!-- Footer -->
+  <footer class="sticky-footer bg-white">
+    <div class="container my-auto">
+      <div class="copyright text-center my-auto">
+        <span>Copyright &copy; Your Website 2019</span>
+      </div>
+    </div>
+  </footer>
+  <!-- End of Footer -->
+</div>
+<!-- End of Content Wrapper -->
+{% endblock content %}
+{% block modal %}
+<!-- Logout Modal-->
+<div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+        <a class="btn btn-primary" href="login.html">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Edit -->
+<div class="modal fade modalEditClass" id="modalEdit" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold text-secondary ml-5">Edit form</h4>
+        <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <label data-error="wrong" data-success="right" for="inputDate">Transaction Date</label>
+        <div class="md-form mb-5">
+          <input class="form-control mb-2" type="date" value="2019-03-12" id="inputDate">
+        </div>
+        <label data-error="wrong" data-success="right" for="inputDesc">Description</label>
+        <div class="md-form mb-5">
+          <input type="text" class="form-control" id="inputDesc" value="Harris Teeter">
+        </div>
+        <label data-error="wrong" data-success="right" for="inputAmount">Amount</label>
+        <div class="input-group mb-5">
+          <div class="input-group-prepend">
+            <div class="input-group-text">$</div>
+          </div>
+          <input type="text" class="form-control" id="inputAmount" value="-32.54">
+        </div>
+        <label data-error="wrong" data-success="right" for="inputAccountSelect">Account</label>
+        <div class="md-form mb-5">
+          <select class="form-control mb-2" id="inputAccountSelect">
+            <option disabled>-- select transfer from account --</option>
+            <option selected value="Chase Sapphire Preferred">Chase Sapphire Preferred</option>
+            <option>Discover It</option>
+            <option>Coastal Federal Credit Union</option>
+            <option>Chase Ink Unlimited</option>
+            <option>AMEX Blue Cash Preferred</option>
+          </select>
+        </div>
+        <label data-error="wrong" data-success="right" for="inputCatSelect">Category</label>
+        <div class="md-form mb-5">
+          <select class="form-control mb-2" id="inputCatSelect">
+            <option disabled>-- select category --</option>
+            <option value="Sprint">Sprint</option>
+            <option>Car Payment</option>
+            <option selected>Flex</option>
+            <option>Vacation</option>
+            <option>Health Care</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-center editInsideWrapper">
+        <button class="btn btn-outline-warning btn-block editInside" data-dismiss="modal">Edit
+          form
+          <i class="fas fa-paper-plane-o ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Delete -->
+<div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDelete" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold ml-5 text-danger">Delete</h4>
+        <button type="button" class="close text-danger" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <p class="text-center h4">Are you sure to delete selected row?</p>
+      </div>
+      <div class="modal-footer d-flex justify-content-center deleteButtonsWrapper">
+        <button type="button" class="btn btn-danger btnYesClass" id="btnYes" data-dismiss="modal">Yes</button>
+        <button type="button" class="btn btn-primary btnNoClass" id="btnNo" data-dismiss="modal">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock modal %}
+{% block javascript %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'js/demo/datatables-demo.js' %}"></script>
+{% endblock javascript %}
