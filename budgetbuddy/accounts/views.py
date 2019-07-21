@@ -138,11 +138,12 @@ def account_page_reverse(money_or_budget, money_account_id):
     # logic to return to page that came from for money/budget or all accounts
     # redirect to the correct page based on where we started
     if money_or_budget == 'm':
-            return HttpResponseRedirect(reverse('money_account', args=[money_account_id]))
+        return HttpResponseRedirect(reverse('money_account', args=[money_account_id]))
     elif money_or_budget == 'b':
         return HttpResponseRedirect(reverse('budget_account', args=[budget_account_id]))
     else:
         return HttpResponseRedirect(reverse('all_accounts'))
+
 
 def create_transaction(request):
     if request.method == 'POST':
@@ -162,7 +163,7 @@ def create_transaction(request):
         else:
             messages.error(request, "Error creating transaction")
 
-        account_page_reverse(money_or_budget, money_account_id)
+        return account_page_reverse(money_or_budget, money_account_id)
 
 
 def transfer_transaction(request):
