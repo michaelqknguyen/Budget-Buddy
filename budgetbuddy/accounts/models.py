@@ -25,15 +25,33 @@ class Account(models.Model):
 
 
 class MoneyAccount(Account):
-    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING, limit_choices_to={'is_cash_account': True})
+    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING,
+                                     limit_choices_to={'is_cash_account': True})
     date_opened = models.DateField(default=datetime.now)
     date_closed = models.DateField(null=True, blank=True)
 
+    @property
+    def money_or_budget(self):
+        return 'm'
+
 
 class BudgetAccount(Account):
-    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING, limit_choices_to={'is_cash_account': False})
+    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING,
+                                     limit_choices_to={'is_cash_account': False})
     contribution_amount = models.DecimalField(max_digits=8, decimal_places=2)
     month_intervals = models.IntegerField()
+
+    @property
+    def monthly_contribution(self):
+        return self.contribution_amount/self.month_intervals
+
+    @property
+    def annual_contribution(self):
+        return self.monthly_contribution * 12
+
+    @property
+    def money_or_budget(self):
+        return 'b'
 
 
 class Transaction(models.Model):

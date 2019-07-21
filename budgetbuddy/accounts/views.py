@@ -7,7 +7,8 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Sum
+from django.db.models import Sum, F
+from django.db.models.functions import Coalesce
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from .models import MoneyAccount, BudgetAccount, AccountType, Transaction
@@ -31,25 +32,38 @@ def index(request):
     # budget_active = request.GET.get('moneyActive') or True
 
     # always show all actives
-    money_accounts = MoneyAccount.objects.filter(active__in=(True, money_active), user=user).order_by('name')
-    for account in money_accounts:
-        transactions = get_transactions(user, account, MoneyAccount)
-        account.total = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
+    money_accounts = (
+        MoneyAccount.
+        objects.
+        filter(
+            active__in=(True, money_active),
+            user=user
+        )
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .order_by('name')
+    )
 
     flex_account_type = AccountType.objects.get(account_type='Flex')
-    flex_account = BudgetAccount.objects.get(user=user,
-                                             account_type=flex_account_type)
-    flex_transactions = get_transactions(user, flex_account, BudgetAccount)
-    flex_account.total = flex_transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
+    flex_account = (
+        BudgetAccount
+        .objects
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .get(
+            user=user,
+            account_type=flex_account_type
+        )
+    )
 
-    budget_accounts = BudgetAccount.objects.filter(active__in=(True, budget_active), user=user).\
-        exclude(account_type=flex_account_type).order_by('-account_type', 'name')
-    for account in budget_accounts:
-        # annotate extra fields for view rendering
-        account.monthly_contribution = account.contribution_amount/account.month_intervals
-        account.annual_contribution = 12*account.monthly_contribution
-        transactions = get_transactions(user, account, BudgetAccount)
-        account.total = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
+    budget_accounts = (
+        BudgetAccount.
+        objects.
+        filter(
+            active__in=(True, budget_active),
+            user=user)
+        .exclude(account_type=flex_account_type)
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .order_by('-account_type', 'name')
+    )
 
     context = {
         'maccounts': money_accounts,
@@ -87,10 +101,6 @@ def account_view(request, account_id, account_type):
     budget_accounts = BudgetAccount.objects.filter(active=True, user=user).order_by('name')
 
     # context for template what each account is since they will be blended together
-    for account in money_accounts:
-        account.money_or_budget = 'm'
-    for account in budget_accounts:
-        account.money_or_budget = 'b'
     # sort the accounts in a list by abc order
     accounts = sorted(chain(money_accounts, budget_accounts),
                       key=operator.attrgetter('name'))
@@ -100,19 +110,19 @@ def account_view(request, account_id, account_type):
 
     # get transactions for this account
     all_transactions = get_transactions(user, active_account, account_type)
-    balance = all_transactions.aggregate(balance=Sum('amount_spent'))
+    balance = all_transactions.aggregate(
+        balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
     subset_transactions = all_transactions.filter(transaction_date__range=(start_date,end_date))
-    subset_spent = subset_transactions.aggregate(spent=Sum('amount_spent'))
+    subset_spent = subset_transactions.aggregate(
+        spent=Coalesce(Sum('amount_spent'), 0)).get('spent', 0)
 
     # initialize transaction form
     initial_transaction = {
         'transaction_date': datetime.date.today(),
     }
     if account_type is MoneyAccount:
-        active_account.money_or_budget = 'm'
         initial_transaction['money_account'] = active_account
     elif account_type is BudgetAccount:
-        active_account.money_or_budget = 'b'
         initial_transaction['budget_account'] = active_account
     # else:
     #     money_or_budget = None
@@ -126,9 +136,8 @@ def account_view(request, account_id, account_type):
         'transactions': subset_transactions,
         'start_date': start_date,
         'end_date': end_date,
-        'balance': balance['balance'] or 0,
-        'time_frame_spent': subset_spent['spent'] or 0,
-        'num_transactions': len(subset_transactions),
+        'balance': balance,
+        'time_frame_spent': subset_spent,
         'transaction_form': initial_transaction,
     }
     return render(request, 'accounts/account.html', context)
