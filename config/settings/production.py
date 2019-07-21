@@ -54,6 +54,9 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
     "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
 )
 
+# STATIC
+# ------------------------
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # MEDIA
 # ------------------------------------------------------------------------------
 
@@ -99,6 +102,11 @@ ANYMAIL = {
     "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN"),
     "MAILGUN_API_URL": env("MAILGUN_API_URL", default="https://api.mailgun.net/v3"),
 }
+
+# WhiteNoise
+# ------------------------------------------------------------------------------
+# http://whitenoise.evans.io/en/latest/django.html#enable-whitenoise
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa F405
 
 # Gunicorn
 # ------------------------------------------------------------------------------
@@ -157,7 +165,3 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-# WhiteNoise
-# ------------------------------------------------------------------------------
-# http://whitenoise.evans.io/en/latest/django.html#enable-whitenoise
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa F405
