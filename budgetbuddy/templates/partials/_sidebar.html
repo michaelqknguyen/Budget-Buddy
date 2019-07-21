@@ -1,7 +1,7 @@
 <!-- Sidebar -->
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
   <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'home' %}">
     <div class="sidebar-brand-icon rotate-n-15">
       <i class="fas fa-laugh-wink"></i>
     </div>
@@ -21,13 +21,20 @@
   <div class="sidebar-heading">
     Navigation
   </div>
-  <!-- Nav Item - Charts -->
+  <!-- Nav Item - Accounts -->
   <li class="nav-item">
-    <a class="nav-link" href="{% url 'budget' %}">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
       <i class="fas fa-fw fa-coins"></i>
-      <span>All Accounts</span></a>
+      <span>Account Details</span>
+    </a>
+    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+      <div class="bg-white py-2 collapse-inner rounded">
+        <a class="collapse-item" href="{% url 'budget' %}">All Accounts Overview</a>
+        <a class="collapse-item" href="{% url 'all_accounts' %}">All Transactions</a>
+      </div>
+    </div>
   </li>
-  <!-- Nav Item - Tables -->
+  <!-- Nav Item - Paychecks -->
   <li class="nav-item">
     <a class="nav-link" href="{% url 'paychecks' %}">
       <i class="fas fa-fw fa-money-check"></i>

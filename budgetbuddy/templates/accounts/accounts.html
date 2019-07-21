@@ -9,30 +9,41 @@ Account Overview
 <div class="container-fluid">
   <!-- Page Heading -->
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Accounts</h1>
-    <div class="custom-control custom-checkbox small">
-      <input type="checkbox" class="custom-control-input" id="customCheck">
-      <label class="custom-control-label" for="customCheck">Show Inactive Accounts</label>
+    <h1 class="h3 mb-0 text-gray-800">
+      Accounts
+    </h1>
+    <div class="custom-control">
+      <a href="{% url 'money_account_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Money Account</span></a>
     </div>
+  </div>
+  <div class="custom-control custom-checkbox small">
+    <form action="{% url 'budget' %}">
+      <input type="checkbox" class="custom-control-input" name="moneyActive" id="moneyActive" onclick="form.submit();" {% if not money_active_only %} checked {% endif %} value="{{ budget_active_only }}">
+      <label class="custom-control-label" for="moneyActive">Show Inactive Money Accounts</label>
+    </form>
   </div>
   <div class="row">
     <!-- Earnings (Monthly) Card Example -->
     {% for account in maccounts %}
     <div class="col-xl-3a col-md-6 mb-4">
       <div class="card shadow h-100 py-2">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <a href="{% url 'money_account' account.id %}">
+            <h6 class="text-xs font-weight-bold {% if not account.active %} text-gray-300 {% else %} text-primary {% endif %} text-uppercase mb-1">{{ account.name }}</h6>
+          </a>
+          <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+              <a class="dropdown-item" href="{% url 'money_account_edit' account.id %}">Edit {{ account.name }}</a>
+            </div>
+          </div>
+        </div>
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <a href="{% url 'money_account' account.id %}" class="nav-tabs">
-                <div class="text-xs font-weight-bold 
-                {% if account.account_type.account_type == 'Credit Card' %}
-                    text-primary
-                {% else %}
-                    text-success
-                {% endif %}
-                text-uppercase mb-1">{{ account.name }}</div>
-              </a>
-              <div class="h5 mb-0 font-weight-bold text-red">-$416.04</div>
+              <div class="h5 mb-0 font-weight-bold {% if not account.active %} text-gray-300 {% elif account.total > 0 %} text-success {% elif account.total < 0 %} text-danger {% endif %}">${{ account.total | intcomma }}</div>
             </div>
             <div class="col-auto">
               <i class="fas 
@@ -60,13 +71,23 @@ Account Overview
     <!-- Earnings (Monthly) Card Example -->
     <div class="col-xl-3a col-md-6 mb-4">
       <div class="card shadow h-100 py-2">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <a href="{% url 'budget_account' flex_account.id %}">
+            <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ flex_account.name }}</h6>
+          </a>
+          <div class="dropdown no-arrow">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+              <a class="dropdown-item" href="{% url 'budget_account_edit' flex_account.id %}">Edit {{ flex_account.name }}</a>
+            </div>
+          </div>
+        </div>
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <a href="{% url 'budget_account' flex_account.id %}" class="nav-tabs">
-                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{{ flex_account.name }}</div>
-              </a>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">$4,416.04</div>
+              <div class="h5 mb-0 font-weight-bold {% if flex_account.total > 0 %} text-success {% elif flex_account.total < 0 %} text-danger {% endif %}">${{ flex_account.total | intcomma }}</div>
             </div>
             <div class="col-auto">
               <i class="fas fa-funnel-dollar fa-2x text-gray-300"></i>
@@ -85,6 +106,12 @@ Account Overview
     <div class="custom-control">
       <a href="{% url 'budget_account_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Expense/Saving</span></a>
     </div>
+  </div>
+  <div class="custom-control custom-checkbox small">
+    <form action="{% url 'budget' %}">
+      <input type="checkbox" class="custom-control-input" name="budgetActive" id="budgetActive" onclick="form.submit();" {% if not budget_active_only %} checked {% endif %} value="{{ money_active_only }}">
+      <label class="custom-control-label" for="budgetActive">Show Inactive Budget Accounts</label>
+    </form>
   </div>
   <!-- Table -->
   <div class="card shadow mb-4">
@@ -105,12 +132,14 @@ Account Overview
             {% for account in budget_accounts %}
             <tr>
               <td>
-                <a href="{% url 'budget_account' account.id %}" class="nav">{{ account.name }}</a>
+                <a href="{% url 'budget_account' account.id %}" class="nav {% if not account.active %}
+                  text-gray-300
+                {% endif %}">{{ account.name }}</a>
               </td>
               <td>{{ account.account_type }}</td>
               <td>${{ account.monthly_contribution | floatformat:2 | intcomma}}</td>
               <td>${{ account.annual_contribution | floatformat:2 | intcomma}}</td>
-              <td class="text-money">$13,576.92</td>
+              <td class="{% if not account.active %} text-gray-300 {% elif account.total >= 0 %} text-money {% elif account.total < 0 %} text-danger {% endif %}">${{ account.total | intcomma }}</td>
               <td>
                 <div class="row">
                   <form action="{% url 'budget_account_edit' account.id %}" method="get">

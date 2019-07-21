@@ -3,7 +3,11 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% block title %}
-Account Overview
+{% if active_account %}
+  {{ active_account }} Statements
+{% else %}
+  All Account Statements
+{% endif %}
 {% endblock title %}
 {% block content %}
 <!-- Begin Page Content -->
@@ -120,7 +124,7 @@ Account Overview
           <div class="form-row align-items-center">
             <div class="col-auto">
               <label class="sr-only" for="transaction_date">Transaction Date</label>
-              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus>
+              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus required>
             </div>
             <div class="col-auto">
               <label class="sr-only" for="description">Description</label>
@@ -132,13 +136,13 @@ Account Overview
                 <div class="input-group-prepend">
                   <div class="input-group-text">$</div>
                 </div>
-                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput" placeholder="0.00">
+                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput" placeholder="0.00" required>
               </div>
             </div>
             <div class="col-auto">
               <label for="money_account" class="sr-only"></label>
-              <select class="form-control mb-2" name="money_account">
-                <option selected disabled>-- select account --</option>
+              <select class="form-control mb-2" name="money_account" required>
+                <option selected disabled value="">-- select account --</option>
                 {% if active_account.money_or_budget == 'm' %}
                 <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
                 {% else %}
@@ -150,8 +154,8 @@ Account Overview
             </div>
             <div class="col-auto">
               <label for="budget_account" class="sr-only"></label>
-              <select class="form-control mb-2" name="budget_account">
-                <option selected disabled>-- select category --</option>
+              <select class="form-control mb-2" name="budget_account" required>
+                <option selected disabled value="">-- select category --</option>
                 {% if active_account.money_or_budget == 'b' %}
                 <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
                 {% else %}
@@ -185,7 +189,7 @@ Account Overview
           <div class="form-row align-items-center">
             <div class="col-auto">
               <label class="sr-only" for="transaction_date">Transaction Date</label>
-              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus>
+              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus required>
             </div>
             <div class="col-auto">
               <label class="sr-only" for="amount_spent">Amount</label>
@@ -193,13 +197,13 @@ Account Overview
                 <div class="input-group-prepend">
                   <div class="input-group-text">$</div>
                 </div>
-                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput2" placeholder="0.00">
+                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="amount_spent" id="moneyInput2" placeholder="0.00" required>
               </div>
             </div>
             <div class="col-auto">
               <label for="fromAccount" class="sr-only"></label>
-              <select class="form-control mb-2" name="fromAccount">
-                <option selected disabled>-- select transfer from account --</option>
+              <select class="form-control mb-2" name="fromAccount" required>
+                <option selected disabled value="">-- select transfer from account --</option>
                 {% if active_account %}
                 <option value='{"account_id": {{active_account.id}}, "money_or_budget": "{{active_account.money_or_budget}}"}' selected>{{ active_account }}</option>
                 {% else %}
@@ -211,8 +215,8 @@ Account Overview
             </div>
             <div class="col-auto">
               <label for="toCardSelect" class="sr-only"></label>
-              <select class="form-control mb-2" name="toAccount">
-                <option selected disabled>-- select transfer to account --</option>
+              <select class="form-control mb-2" name="toAccount" required>
+                <option selected disabled value="">-- select transfer to account --</option>
                 {% if active_account.money_or_budget == 'm' %}
                   {% for account in money_accounts %}
                   <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>

@@ -9,6 +9,8 @@ urlpatterns = [
     path('b/create', views.BudgetAccountCreateView.as_view(), name='budget_account_create'),
     path('b/<int:pk>/edit', views.BudgetAccountUpdateView.as_view(), name='budget_account_edit'),
     path('m/<int:account_id>', views.money_account, name='money_account'),
+    path('m/create', views.MoneyAccountCreateView.as_view(), name='money_account_create'),
+    path('m/<int:pk>/edit', views.MoneyAccountUpdateView.as_view(), name='money_account_edit'),
     path('trans/create', views.create_transaction, name='transaction_create'),
     path('trans/transfer', views.transfer_transaction, name='transaction_transfer'),
     # indicate whether to return to budget account page, money account, or all page

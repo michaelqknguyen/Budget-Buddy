@@ -14,7 +14,6 @@ class AccountType(models.Model):
 
 class Account(models.Model):
     name = models.CharField(max_length=200)
-    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING)
     active = models.BooleanField(default=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
@@ -26,11 +25,13 @@ class Account(models.Model):
 
 
 class MoneyAccount(Account):
+    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING, limit_choices_to={'is_cash_account': True})
     date_opened = models.DateField(default=datetime.now)
     date_closed = models.DateField(null=True, blank=True)
 
 
 class BudgetAccount(Account):
+    account_type = models.ForeignKey(AccountType, on_delete=models.DO_NOTHING, limit_choices_to={'is_cash_account': False})
     contribution_amount = models.DecimalField(max_digits=8, decimal_places=2)
     month_intervals = models.IntegerField()
 
@@ -41,9 +42,9 @@ class Transaction(models.Model):
     transaction_date = models.DateField()
     amount_spent = models.DecimalField(max_digits=10, decimal_places=2)
     money_account = models.ForeignKey(MoneyAccount, null=True, blank=True,
-                                         on_delete=models.DO_NOTHING)
+                                      on_delete=models.DO_NOTHING)
     budget_account = models.ForeignKey(BudgetAccount, null=True, blank=True,
-                                          on_delete=models.DO_NOTHING)
+                                       on_delete=models.DO_NOTHING)
     paystub = models.ForeignKey(Paystub, null=True, blank=True,
-                                   on_delete=models.CASCADE)
+                                on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)

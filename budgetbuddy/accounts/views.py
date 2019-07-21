@@ -11,29 +11,52 @@ from django.db.models import Sum
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from .models import MoneyAccount, BudgetAccount, AccountType, Transaction
-from .forms import BudgetAccountForm, TransactionForm
+from .forms import BudgetAccountForm, TransactionForm, MoneyAccountForm
 from .utils import get_transactions, get_date_range
 
 
 def index(request):
     user = request.user
-    money_accounts = MoneyAccount.objects.filter(active=True, user=user)
+
+    # for the active checkbox, it contains the value of the other checkbox
+    budget_active = True
+    money_active = True
+    if 'moneyActive' in request.GET:
+        budget_active = request.GET.get('moneyActive')
+        money_active = False
+    # money_active = request.GET.get('budgetActive') or True
+    if 'budgetActive' in request.GET:
+        money_active = request.GET.get('budgetActive')
+        budget_active = False
+    # budget_active = request.GET.get('moneyActive') or True
+
+    # always show all actives
+    money_accounts = MoneyAccount.objects.filter(active__in=(True, money_active), user=user).order_by('name')
+    for account in money_accounts:
+        transactions = get_transactions(user, account, MoneyAccount)
+        account.total = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
 
     flex_account_type = AccountType.objects.get(account_type='Flex')
     flex_account = BudgetAccount.objects.get(user=user,
                                              account_type=flex_account_type)
+    flex_transactions = get_transactions(user, flex_account, BudgetAccount)
+    flex_account.total = flex_transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
 
-    budget_accounts = BudgetAccount.objects.filter(active=True, user=user).\
-        exclude(account_type=flex_account_type).order_by('-account_type')
+    budget_accounts = BudgetAccount.objects.filter(active__in=(True, budget_active), user=user).\
+        exclude(account_type=flex_account_type).order_by('-account_type', 'name')
     for account in budget_accounts:
         # annotate extra fields for view rendering
         account.monthly_contribution = account.contribution_amount/account.month_intervals
         account.annual_contribution = 12*account.monthly_contribution
+        transactions = get_transactions(user, account, BudgetAccount)
+        account.total = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
 
     context = {
         'maccounts': money_accounts,
+        'money_active_only': money_active,
         'flex_account': flex_account,
         'budget_accounts': budget_accounts,
+        'budget_active_only': budget_active,
     }
     return render(request, 'accounts/accounts.html', context)
 
@@ -111,8 +134,20 @@ def account_view(request, account_id, account_type):
     return render(request, 'accounts/account.html', context)
 
 
+def account_page_reverse(money_or_budget, money_account_id):
+    # logic to return to page that came from for money/budget or all accounts
+    # redirect to the correct page based on where we started
+    if money_or_budget == 'm':
+            return HttpResponseRedirect(reverse('money_account', args=[money_account_id]))
+    elif money_or_budget == 'b':
+        return HttpResponseRedirect(reverse('budget_account', args=[budget_account_id]))
+    else:
+        return HttpResponseRedirect(reverse('all_accounts'))
+
 def create_transaction(request):
     if request.method == 'POST':
+        money_or_budget = request.POST.get('money_or_budget')
+
         money_account_id = request.POST['money_account']
         budget_account_id = request.POST['budget_account']
         # # double check to make sure user has access to both accounts
@@ -121,22 +156,13 @@ def create_transaction(request):
 
         # add user to post items
         transaction = TransactionForm(request.POST)
-        print(transaction.errors)
         if transaction.is_valid():
             transaction.save()
             messages.success(request, '{} transaction has been added'.format(request.POST['description']))
         else:
             messages.error(request, "Error creating transaction")
 
-        # redirect to the correct page based on where we started
-        money_or_budget = request.POST.get('money_or_budget')
-        if money_or_budget == 'm':
-            return HttpResponseRedirect(reverse('money_account', args=[money_account_id]))
-        elif money_or_budget == 'b':
-            return HttpResponseRedirect(reverse('budget_account', args=[budget_account_id]))
-        else:
-            return HttpResponseRedirect(reverse('all_accounts'))
-            pass
+        account_page_reverse(money_or_budget, money_account_id)
 
 
 def transfer_transaction(request):
@@ -243,7 +269,7 @@ class TransactionDeleteView(DeleteView):
 class BudgetAccountCreateView(CreateView):
     model = BudgetAccount
     form_class = BudgetAccountForm
-    template_name = 'accounts/budget_account_form.html'
+    template_name = 'accounts/account_form.html'
 
     def get_initial(self, *args, **kwargs):
         initial = super(BudgetAccountCreateView, self).get_initial(**kwargs)
@@ -262,12 +288,51 @@ class BudgetAccountCreateView(CreateView):
 class BudgetAccountUpdateView(UserPassesTestMixin, UpdateView):
     model = BudgetAccount
     form_class = BudgetAccountForm
-    template_name = 'accounts/budget_account_form.html'
+    template_name = 'accounts/account_form.html'
 
     def test_func(self):
         path = self.request.path
         account_id = re.search('b/(.*)/edit', path).group(1)
         return BudgetAccount.objects.filter(pk=account_id, user=self.request.user)
+
+    def get_success_url(self):
+        return reverse('budget')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Edit {} Account'.format(self.object.name)
+        return context
+
+
+class MoneyAccountCreateView(CreateView):
+    model = MoneyAccount
+    form_class = MoneyAccountForm
+    template_name = 'accounts/account_form.html'
+
+    def get_initial(self, *args, **kwargs):
+        initial = super(MoneyAccountCreateView, self).get_initial(**kwargs)
+        initial['user'] = self.request.user
+        initial['date_opened'] = datetime.date.today()
+        return initial
+
+    def get_success_url(self):
+        return reverse('budget')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create New Money Account'
+        return context
+
+
+class MoneyAccountUpdateView(UserPassesTestMixin, UpdateView):
+    model = MoneyAccount
+    form_class = MoneyAccountForm
+    template_name = 'accounts/account_form.html'
+
+    def test_func(self):
+        path = self.request.path
+        account_id = re.search('m/(.*)/edit', path).group(1)
+        return MoneyAccount.objects.filter(pk=account_id, user=self.request.user)
 
     def get_success_url(self):
         return reverse('budget')

@@ -72,6 +72,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "rest_framework",
+    # "formset-bootstrap",
 ]
 
 LOCAL_APPS = [
