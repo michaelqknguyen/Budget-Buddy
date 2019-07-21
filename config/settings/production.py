@@ -157,4 +157,7 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-MIDDLEWARE += ["whitenoise.middleware.WhiteNoiseMiddleware"]  # noqa F405
+# WhiteNoise
+# ------------------------------------------------------------------------------
+# http://whitenoise.evans.io/en/latest/django.html#enable-whitenoise
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa F405
