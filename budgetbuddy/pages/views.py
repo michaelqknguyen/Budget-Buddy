@@ -1,7 +1,7 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from django.db.models import Sum, F, Q
+from django.db.models import Sum, F
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from accounts.models import MoneyAccount, BudgetAccount
@@ -9,6 +9,8 @@ from accounts.models import MoneyAccount, BudgetAccount
 
 def index(request):
     user = request.user
+    if user.is_anonymous:
+        return HttpResponseRedirect(reverse('account_login'))
 
     money_balance = (
         MoneyAccount.

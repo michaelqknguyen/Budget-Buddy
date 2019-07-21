@@ -16,6 +16,10 @@
       </select>
     </form>
   </h1>
+  <div class="custom-control">
+    <a href="{% url 'paycheck_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Salary</span></a>
+    <a href="{% url 'paycheck_edit' paycheck.id %}" class="btn btn-warning"><i class="fas fa-edit"></i> <span>Edit {{ paycheck }} Salary</span></a>
+  </div>
 </div>
 <!-- Salary and final take home pay -->
 <div class="row justify-content-center">
@@ -114,11 +118,11 @@
   <div class="col-xl-4">
     <div class="card mb-4">
       <div class="card-header py-3">
-        <h6 class="m-0">Received Paycheck</h6>
+        <h6 class="m-0">Received Paystubs</h6>
       </div>
       <div class="card-body">
         <div class="mb-2">
-          <a href="{% url 'paystub_add' paycheck.id %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Paycheck</span></a>
+          <a href="{% url 'paystub_add' paycheck.id %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Paystub</span></a>
         </div>
         <div class="table-responsive">
           <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">

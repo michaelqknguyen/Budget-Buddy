@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     path('', views.index, name='paychecks'),
     path('<int:paycheck_id>', views.index, name='paycheck'),
+    path('add', views.PaycheckCreateView.as_view(), name='paycheck_create'),
+    path('<int:pk>/edit', views.PaycheckUpdateView.as_view(), name='paycheck_edit'),
     path('paystub/<int:paycheck_id>/add-paystub', views.add_paystub, name='paystub_add'),
     path('paystub/<int:pk>/delete', views.PaystubDeleteView.as_view(),
          name='paystub_delete'),

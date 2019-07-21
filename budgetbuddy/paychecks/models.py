@@ -10,7 +10,7 @@ class Paycheck(models.Model):
     annual_salary = models.DecimalField(max_digits=10, decimal_places=2)
     paychecks_per_year = models.IntegerField()
     active = models.BooleanField(default=True)
-    creation_date = models.DateTimeField(default=datetime.now, blank=True)
+    creation_date = models.DateField(default=datetime.now, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):

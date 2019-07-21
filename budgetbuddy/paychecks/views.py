@@ -2,21 +2,25 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Sum, Q
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
-from django.views.generic.edit import UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from django.forms import modelformset_factory
 from django.http import HttpResponseRedirect
 from .models import Paycheck, PayType, Deduction, Paystub
-from .forms import DeductionForm, PaystubForm, TransactionPaystubForm
-from accounts.models import Transaction, BudgetAccount
+from .forms import DeductionForm, PaystubForm, TransactionPaystubForm, PaycheckForm
+from accounts.models import Transaction, BudgetAccount, MoneyAccount
 import re
 import datetime
 
 
-def index(request, paycheck_id=1):
+def index(request, paycheck_id=None):
     user = request.user
     paychecks = Paycheck.objects.filter(active=True, user=user)
+    if not paychecks:
+        # redirect to create page if no paychecks
+        return HttpResponseRedirect(reverse('paycheck_create'))
 
     # if form get, get the requested paycheck_id
     if 'paycheck_id' in request.GET:
@@ -24,8 +28,11 @@ def index(request, paycheck_id=1):
         return redirect('/paychecks/'+paycheck_id)
 
     # paycheck data
-    paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
-    pay_type = get_object_or_404(PayType, pk=paycheck.paychecks_per_year)
+    if not paycheck_id:
+        return HttpResponseRedirect(reverse('paycheck', args=(paychecks.first().id,)))
+    else:
+        paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
+    pay_type = PayType.objects.filter(pk=paycheck.paychecks_per_year).first()
 
     # calculate take home pay (paycheck gross - all deductions)
     deductions_list = Deduction.objects.filter(paycheck=paycheck, active=True, user=user)
@@ -137,9 +144,22 @@ def add_paystub(request, paycheck_id):
     transaction_formset = TransactionFormSet(initial=transaction_data, prefix='budget',
                                              queryset=Transaction.objects.none())
 
-    deposit_formset = DepositFormSet(prefix='deposit', queryset=Transaction.objects.none())
+    deposit_formset = DepositFormSet(
+        prefix='deposit',
+        queryset=Transaction.objects.none(),
+        form_kwargs={'user': user},
+    )
 
-    paystub_form = PaystubForm(initial={'paycheck': paycheck_id, 'user': request.user})
+    # initialize paycheck gross
+    deductions_list = Deduction.objects.filter(paycheck=paycheck, active=True, user=user)
+    paycheck_gross = round(paycheck.annual_salary/paycheck.paychecks_per_year, 2)
+    deduction_total = deductions_list.aggregate(total=Coalesce(Sum('amount'), 0)).get('total')
+
+    paystub_form = PaystubForm(initial={
+        'paycheck': paycheck_id,
+        'user': request.user,
+        'gross_pay': paycheck_gross - deduction_total
+    })
 
     context = {
         'paystub_form': paystub_form,
@@ -202,3 +222,38 @@ class DeductionDeleteView(UserPassesTestMixin, DeleteView):
 
     def get_success_url(self):
         return reverse('paycheck', args=(self.object.paycheck.id,))
+
+
+class PaycheckCreateView(CreateView):
+    model = Paycheck
+    form_class = PaycheckForm
+    template_name = 'paychecks/paycheck_form.html'
+
+    def get_initial(self, *args, **kwargs):
+        initial = super(PaycheckCreateView, self).get_initial(**kwargs)
+        initial['user'] = self.request.user
+        return initial
+
+    def get_success_url(self):
+        get_object_or_404(Paycheck, pk=self.object.id, user=self.request.user)
+        return reverse('paycheck', args=(self.object.id,))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create New Salary Paycheck'
+        return context
+
+
+class PaycheckUpdateView(UserPassesTestMixin, UpdateView):
+    model = Paycheck
+    form_class = PaycheckForm
+    template_name = 'paychecks/paycheck_form.html'
+
+    def test_func(self):
+        path = self.request.path
+        paycheck_id = re.search('paychecks/(.*)/edit', path).group(1)
+        return Paycheck.objects.filter(pk=paycheck_id, user=self.request.user)
+
+    def get_success_url(self):
+        get_object_or_404(Paycheck, pk=self.object.id, user=self.request.user)
+        return reverse('paycheck', args=(self.object.id,))

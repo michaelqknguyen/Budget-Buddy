@@ -1,8 +1,26 @@
 from django import forms
-from .models import Deduction, Paystub
+from .models import Deduction, Paystub, Paycheck
+from accounts.models import MoneyAccount
 from accounts.models import Transaction
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
+
+
+class PaycheckForm(forms.ModelForm):
+    class Meta:
+        model = Paycheck
+        fields = ('company', 'annual_salary', 'paychecks_per_year', 'active',
+                  'creation_date', 'user')
+        labels = {
+            'creation_date': 'Start Date',
+        }
+        widgets = {'user': forms.HiddenInput()}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Save Salary Information'))
 
 
 class DeductionForm(forms.ModelForm):
@@ -76,7 +94,10 @@ class TransactionPaystubForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields['money_account'].queryset = MoneyAccount.objects.filter(user=self.user, active=True)
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))

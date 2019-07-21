@@ -42,16 +42,22 @@ def index(request):
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
         .order_by('name')
     )
+    # redirect to moeny account creation if no money account
+    # if not money_accounts:
+    #     return HttpResponseRedirect(reverse('money_account_create'))
 
-    flex_account = (
-        BudgetAccount
-        .objects
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
-        .get(
-            Q(account_type__account_type='Flex'),
-            user=user,
+    try:
+        flex_account = (
+            BudgetAccount
+            .objects
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+            .get(
+                Q(account_type__account_type='Flex'),
+                user=user,
+            )
         )
-    )
+    except BudgetAccount.DoesNotExist:
+        flex_account = None
 
     budget_accounts = (
         BudgetAccount.
