@@ -7,11 +7,11 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
-from .models import MoneyAccount, BudgetAccount, AccountType, Transaction
+from .models import MoneyAccount, BudgetAccount, Transaction
 from .forms import BudgetAccountForm, TransactionForm, MoneyAccountForm
 from .utils import get_transactions, get_date_range
 
@@ -43,14 +43,13 @@ def index(request):
         .order_by('name')
     )
 
-    flex_account_type = AccountType.objects.get(account_type='Flex')
     flex_account = (
         BudgetAccount
         .objects
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
         .get(
+            Q(account_type__account_type='Flex'),
             user=user,
-            account_type=flex_account_type
         )
     )
 
@@ -60,7 +59,7 @@ def index(request):
         filter(
             active__in=(True, budget_active),
             user=user)
-        .exclude(account_type=flex_account_type)
+        .exclude(Q(account_type__account_type='Flex'))
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
         .order_by('-account_type', 'name')
     )

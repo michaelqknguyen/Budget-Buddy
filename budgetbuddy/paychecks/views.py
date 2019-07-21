@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.core.paginator import Paginator
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse
@@ -9,7 +9,7 @@ from django.forms import modelformset_factory
 from django.http import HttpResponseRedirect
 from .models import Paycheck, PayType, Deduction, Paystub
 from .forms import DeductionForm, PaystubForm, TransactionPaystubForm
-from accounts.models import Transaction, BudgetAccount, AccountType
+from accounts.models import Transaction, BudgetAccount
 import re
 import datetime
 
@@ -35,13 +35,15 @@ def index(request, paycheck_id=1):
 
     # paystub data
     paystubs_list = Paystub.objects.order_by('-end_date').filter(paycheck=paycheck, user=user)
-    flex_account_type = AccountType.objects.get(account_type='Flex')
     for paystub in paystubs_list:
         transactions = Transaction.objects.filter(
             transaction_date__gte=paystub.start_date,
             transaction_date__lt=paystub.end_date,
             user=user,
-            budget_account=BudgetAccount.objects.get(user=user, account_type=flex_account_type)
+            budget_account=BudgetAccount.objects.get(
+                Q(account_type__account_type='Flex'),
+                user=user,
+            )
         ).exclude(notes='paystub')
         paystub.spent_in_period = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
     paginator = Paginator(paystubs_list, 15)
@@ -66,10 +68,9 @@ def add_paystub(request, paycheck_id):
     user = request.user
     today = datetime.datetime.now()
     paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
-    flex_account_type = AccountType.objects.get(account_type='Flex')
 
     budget_accounts = BudgetAccount.objects.filter(user=user, active=True).\
-        exclude(account_type=flex_account_type).order_by('name')
+        exclude(Q(account_type__account_type='Flex')).order_by('name')
     TransactionFormSet = modelformset_factory(Transaction, form=TransactionPaystubForm, extra=len(budget_accounts))
     DepositFormSet = modelformset_factory(Transaction, form=TransactionPaystubForm, extra=5)
 
@@ -99,7 +100,10 @@ def add_paystub(request, paycheck_id):
                 user=user,
                 transaction_date=end_date,
                 paystub=paystub,
-                budget_account=BudgetAccount.objects.get(user=user, account_type=flex_account_type),
+                budget_account=BudgetAccount.objects.get(
+                    Q(account_type__account_type='Flex'),
+                    user=user,
+                ),
                 amount_spent=request.POST['flex_amount_spent']
             )
             flex_contribution.save()
