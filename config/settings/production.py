@@ -157,3 +157,4 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+MIDDLEWARE += ["whitenoise.middleware.WhiteNoiseMiddleware"]  # noqa F405
