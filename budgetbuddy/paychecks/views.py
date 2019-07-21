@@ -5,10 +5,13 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
+from django.forms import modelformset_factory
+from django.http import HttpResponseRedirect
 from .models import Paycheck, PayType, Deduction, Paystub
-from .forms import DeductionForm
+from .forms import DeductionForm, PaystubForm, TransactionPaystubForm
+from accounts.models import Transaction, BudgetAccount, AccountType
 import re
+import datetime
 
 
 def index(request, paycheck_id=1):
@@ -31,7 +34,16 @@ def index(request, paycheck_id=1):
     deduction_form = DeductionForm(initial={'paycheck': paycheck, 'user': request.user})
 
     # paystub data
-    paystubs_list = Paystub.objects.order_by('end_date').filter(paycheck=paycheck, user=user)
+    paystubs_list = Paystub.objects.order_by('-end_date').filter(paycheck=paycheck, user=user)
+    flex_account_type = AccountType.objects.get(account_type='Flex')
+    for paystub in paystubs_list:
+        transactions = Transaction.objects.filter(
+            transaction_date__gte=paystub.start_date,
+            transaction_date__lt=paystub.end_date,
+            user=user,
+            budget_account=BudgetAccount.objects.get(user=user, account_type=flex_account_type)
+        ).exclude(notes='paystub')
+        paystub.spent_in_period = transactions.aggregate(spent=Sum('amount_spent'))['spent'] or 0
     paginator = Paginator(paystubs_list, 15)
     page = request.GET.get('page')
     paged_paystubs = paginator.get_page(page)
@@ -48,6 +60,103 @@ def index(request, paycheck_id=1):
         'deduction_form': deduction_form,
     }
     return render(request, 'paychecks/paychecks.html', context)
+
+
+def add_paystub(request, paycheck_id):
+    user = request.user
+    today = datetime.datetime.now()
+    paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
+    flex_account_type = AccountType.objects.get(account_type='Flex')
+
+    budget_accounts = BudgetAccount.objects.filter(user=user, active=True).\
+        exclude(account_type=flex_account_type).order_by('name')
+    TransactionFormSet = modelformset_factory(Transaction, form=TransactionPaystubForm, extra=len(budget_accounts))
+    DepositFormSet = modelformset_factory(Transaction, form=TransactionPaystubForm, extra=5)
+
+    if request.method == 'POST':
+        end_date = request.POST['end_date']
+        paystub_form = PaystubForm(request.POST)
+        transaction_formset = TransactionFormSet(request.POST, prefix='budget')
+        deposit_formset = DepositFormSet(request.POST, prefix='deposit')
+        if paystub_form.is_valid() and transaction_formset.is_valid() and deposit_formset.is_valid():
+            paystub = paystub_form.save(commit=False)
+            paystub.user = user
+            paystub.save()
+
+            # adding necessary data for each budget contribution
+            for contribution in transaction_formset.save(commit=False):
+                contribution.description = 'Paycheck Contribution'
+                contribution.notes = 'paystub'
+                contribution.user = user
+                contribution.transaction_date = end_date
+                contribution.paystub = paystub
+                contribution.save()
+
+            # Creating the flex budget contribution
+            flex_contribution = Transaction(
+                description='Paycheck Contribution',
+                notes='paystub',
+                user=user,
+                transaction_date=end_date,
+                paystub=paystub,
+                budget_account=BudgetAccount.objects.get(user=user, account_type=flex_account_type),
+                amount_spent=request.POST['flex_amount_spent']
+            )
+            flex_contribution.save()
+
+            # adding necessary data for each money deposit
+            for deposit in deposit_formset.save(commit=False):
+                deposit.description = 'Payed'
+                deposit.notes = 'paystub'
+                deposit.user = user
+                deposit.transaction_date = end_date
+                deposit.paystub = paystub
+                deposit.save()
+
+            return HttpResponseRedirect(reverse('paycheck', args=(paycheck_id,)))
+
+    transaction_data = []
+    for account in budget_accounts:
+        # initialize a transaction data for each budget account
+        account_trans = {}
+        account_trans['budget_account'] = account
+
+        account_trans_list = Transaction.objects.filter(
+            user=user, budget_account=account, paystub__isnull=False,
+            transaction_date__year=today.year, transaction_date__month=today.month
+        )
+        account_trans['month_contribution'] = account_trans_list.aggregate(Sum('amount_spent'))['amount_spent__sum'] or 0
+        account_trans['monthly_contribution'] = round(account.contribution_amount/account.month_intervals, 2)
+        # initialize paycheck contribution as monthly_contribution * 12 / number of paychecks per year
+        account_trans['amount_spent'] = round(account_trans['monthly_contribution']*12/paycheck.paychecks_per_year, 2)
+        transaction_data.append(account_trans)
+    transaction_formset = TransactionFormSet(initial=transaction_data, prefix='budget',
+                                             queryset=Transaction.objects.none())
+
+    deposit_formset = DepositFormSet(prefix='deposit', queryset=Transaction.objects.none())
+
+    paystub_form = PaystubForm(initial={'paycheck': paycheck_id, 'user': request.user})
+
+    context = {
+        'paystub_form': paystub_form,
+        'transaction_formset': transaction_formset,
+        'deposit_formset': deposit_formset,
+        'paycheck': paycheck,
+    }
+
+    return render(request, 'paychecks/paystub_create.html', context)
+
+
+class PaystubDeleteView(UserPassesTestMixin, DeleteView):
+    model = Paystub
+
+    def test_func(self):
+        path = self.request.path
+        paystub_id = re.search('paystub/(.*)/delete', path).group(1)
+        return Paystub.objects.filter(pk=paystub_id, user=self.request.user)
+
+    def get_success_url(self):
+        return reverse('paycheck', args=(self.object.paycheck.id,))
 
 
 def create_deduction(request):

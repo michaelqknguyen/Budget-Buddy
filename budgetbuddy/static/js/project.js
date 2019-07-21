@@ -4,7 +4,7 @@
 
   $(document).on('click', '.confirm-delete', function(){
     return confirm('Are you sure you want to delete this?');
-  })
+  });
 
 })(jQuery); // End of use strict
 
@@ -19,6 +19,10 @@ $(document).ready(function() {
   });
 
   $('#moneyInput2').blur(function() {
+    this.value = parseFloat(this.value).toFixed(2);
+  });
+
+  $('#moneyInput3').blur(function() {
     this.value = parseFloat(this.value).toFixed(2);
   });
 });

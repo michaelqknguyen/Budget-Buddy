@@ -2,7 +2,7 @@
 {% load humanize %}
 {% load crispy_forms_tags %}
 {% block title %}
-View Paychecks
+{{ paycheck }} Paycheck Information
 {% endblock title %}
 {% block content %}
 <!-- Page Heading -->
@@ -118,14 +118,14 @@ View Paychecks
       </div>
       <div class="card-body">
         <div class="mb-2">
-          <a href="#modalAddPaycheck" class="btn btn-success" data-toggle="modal"><i class="fas fa-plus"></i> <span>Add New Paycheck</span></a>
+          <a href="{% url 'paystub_add' paycheck.id %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Paycheck</span></a>
         </div>
         <div class="table-responsive">
           <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Pay Period Spent</th>
+                <th>Pay Period Flex Spent</th>
                 <th>Gross Pay</th>
                 <th>Action</th>
               </tr>
@@ -134,12 +134,13 @@ View Paychecks
               {% for paystub in paystubs %}
               <tr>
                 <td>{{ paystub.end_date}}</td>
-                <td>to do</td>
+                <td>${{ paystub.spent_in_period | intcomma }}</td>
                 <td>${{ paystub.gross_pay | intcomma }}</td>
                 <td>
-                  <a href="#deleteEmployeeModal" class="delete" data-toggle="modal" data-target="#modalPaycheckDelete">
-                    <i class="fas fa-trash text-red" data-toggle="tooltip" title="Delete"></i>
-                  </a>
+                  <form action="{% url 'paystub_delete' paystub.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete this paystub?');">
+                  </form>
                 </td>
               </tr>
               {% endfor %}

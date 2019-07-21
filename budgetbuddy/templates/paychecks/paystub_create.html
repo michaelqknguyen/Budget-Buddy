@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block title %}
+New {{ paycheck }} Paystub
+{% endblock title %}
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">New Paystub for {{ paycheck }} </h1>
+</div>
+<div class="row">
+  <div class="container-fluid">
+    <form method="post">
+      {% csrf_token %}
+      <!-- Paystub Card-->
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Add New Paystub</h6>
+        </div>
+        <div class="card-body">
+          <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
+          {{ paystub_form.paycheck }}
+          <div class="form-row align-items-center">
+            {{ paystub_form.start_date.label_tag }}
+            <div class="col-auto">
+              {{ paystub_form.start_date }}
+            </div>
+            {{ paystub_form.end_date.label_tag }}
+            <div class="col-auto">
+              {{ paystub_form.end_date }}
+            </div>
+            {{ paystub_form.gross_pay.label_tag }}
+            <div class="col-auto">
+              <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">$</div>
+                </div>
+                {{ paystub_form.gross_pay }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- End Paystub Card -->
+      <!-- Budget Contributions Card -->
+      {{ transaction_formset.management_form }}
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Paystub Contributions</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+              <thead>
+                <th>Budget Account</th>
+                <th>Expected Monthly Contribution</th>
+                <th>Contributed This Month</th>
+                <th>Expected Per Paycheck Contribution</th>
+                <th>Contribute This Paycheck</th>
+              </thead>
+              <tbody>
+                <tr>
+                  {% for form in transaction_formset %}
+                  {{ form.id }}
+                  {{ form.budget_account }}
+                  <td>{{ form.budget_account.initial }}</td>
+                  <td>${{ form.monthly_contribution.initial | intcomma }}</td>
+                  <td>${{ form.month_contribution.initial | intcomma}}</td>
+                  <td>${{ form.amount_spent.initial | intcomma }}</td>
+                  <td>
+                    <div class="input-group mb-2 budget">
+                      <div class="input-group-prepend">
+                        <div class="input-group-text">$</div>
+                      </div>
+                      {{ form.amount_spent }}
+                     </div>
+                  </td>
+                </tr>
+                {% endfor %}
+                <tr class="table-secondary">
+                  <td>Flex</td>
+                  <td>*Paystub Gross - sum of other contributions</td>
+                  <td>$435.21</td>
+                  <td> </td>
+                  <td>
+                    <div class="input-group mb-2">
+                      <div class="input-group-prepend">
+                        <div class="input-group-text">$</div>
+                      </div>
+                      <input type="number" step=".01" class="form-control total" name="flex_amount_spent" id="flex_amount" value="" required>
+                     </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- End Budget Contributions Card -->
+      <!-- Money Deposit Card -->
+      {{ deposit_formset.management_form }}
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Paystub Deposit Locations</h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+              <thead>
+                <th>Money Account</th>
+                <th>Deposit Amount</th>
+              </thead>
+              <tbody>
+                <tr>
+                  {% for form in deposit_formset %}
+                  {{ form.id }}
+                  <td>{{ form.money_account }}</td>
+                  <td>
+                    <div class="input-group mb-2 money">
+                      <div class="input-group-prepend">
+                        <div class="input-group-text">$</div>
+                      </div>
+                      {{ form.amount_spent }}
+                     </div>
+                  </td>
+                </tr>
+                {% endfor %}
+                <tr>
+                  <td></td>
+                  <td>
+                    <label>Total: </label>
+                    <output id="deposit-total"></output>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- End Money Deposit Card -->
+      <div class="modal-footer d-flex justify-content-center editInsideWrapper">
+        <button class="btn btn-outline-primary btn-block editInside">Submit Paystub
+          <i class="fas fa-paper-plane-o ml-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
+
+{% block javascript %}
+<script src="{% static 'js/paystub.js' %}"></script>
+{% endblock javascript %}
