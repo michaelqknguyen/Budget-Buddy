@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from accounts.models import MoneyAccount, BudgetAccount
@@ -33,6 +33,22 @@ def index(request):
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
         .aggregate(balance_total=Coalesce(Sum('total'), 0))
     ).get('balance_total')
+
+    try:
+        flex_account = (
+            BudgetAccount
+            .objects
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+            .get(
+                Q(account_type__account_type='Flex'),
+                user=user,
+            )
+        )
+    except BudgetAccount.DoesNotExist:
+        flex_account = None
+
+    if not flex_account:
+        messages.error(request, 'A Flex budget account is required to be created')
 
     if money_balance != budget_balance:
         messages.warning(request, 'Your money accounts and budget accounts are not balanced')
