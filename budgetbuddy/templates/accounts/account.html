@@ -141,7 +141,7 @@
             </div>
             <div class="col-auto">
               <label for="money_account" class="sr-only"></label>
-              <select class="form-control mb-2" name="money_account" required>
+              <select class="form-control mb-2" name="money_account">
                 <option selected disabled value="">-- select account --</option>
                 {% if active_account.money_or_budget == 'm' %}
                 <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
@@ -154,7 +154,7 @@
             </div>
             <div class="col-auto">
               <label for="budget_account" class="sr-only"></label>
-              <select class="form-control mb-2" name="budget_account" required>
+              <select class="form-control mb-2" name="budget_account">
                 <option selected disabled value="">-- select category --</option>
                 {% if active_account.money_or_budget == 'b' %}
                 <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
