@@ -163,11 +163,13 @@ def create_transaction(request):
     if request.method == 'POST':
         money_or_budget = request.POST.get('money_or_budget')
 
-        money_account_id = request.POST['money_account']
-        budget_account_id = request.POST['budget_account']
+        money_account_id = request.POST.get('money_account')
+        budget_account_id = request.POST.get('budget_account')
         # # double check to make sure user has access to both accounts
-        get_object_or_404(MoneyAccount, pk=money_account_id, user=request.user)
-        get_object_or_404(BudgetAccount, pk=budget_account_id, user=request.user)
+        if money_account_id:
+            get_object_or_404(MoneyAccount, pk=money_account_id, user=request.user)
+        if budget_account_id:
+            get_object_or_404(BudgetAccount, pk=budget_account_id, user=request.user)
 
         # add user to post items
         transaction = TransactionForm(request.POST)
