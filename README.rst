@@ -1,7 +1,7 @@
-budgetbuddy
-===========
+rand2
+=====
 
-Budgetting Buddy
+rand2
 
 .. image:: https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg
      :target: https://github.com/pydanny/cookiecutter-django/
@@ -42,7 +42,7 @@ Running type checks with mypy:
 
 ::
 
-  $ mypy budgetbuddy
+  $ mypy rand2
 
 Test coverage
 ^^^^^^^^^^^^^
@@ -69,6 +69,15 @@ Moved to `Live reloading and SASS compilation`_.
 
 
 
+
+
+Sentry
+^^^^^^
+
+Sentry is an error logging aggregator service. You can sign up for a free account at  https://sentry.io/signup/?code=cookiecutter  or download and host it yourself.
+The system is setup with reasonable defaults, including 404 logging and integration with the WSGI application.
+
+You must set the DSN url in production.
 
 
 Deployment
