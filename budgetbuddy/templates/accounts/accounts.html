@@ -29,7 +29,7 @@ Account Overview
       <div class="card shadow h-100 py-2">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <a href="{% url 'money_account' account.id %}">
-            <h6 class="text-xs font-weight-bold {% if not account.active %} text-gray-300 {% else %} text-primary {% endif %} text-uppercase mb-1">{{ account.name }}</h6>
+            <h6 class="text font-weight-bold {% if not account.active %} text-gray-300 {% else %} text-primary {% endif %} text-uppercase mb-1">{{ account.name }}</h6>
           </a>
           <div class="dropdown no-arrow">
             <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -74,7 +74,7 @@ Account Overview
       <div class="card shadow h-100 py-2">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <a href="{% url 'budget_account' flex_account.id %}">
-            <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ flex_account.name }}</h6>
+            <h6 class="text font-weight-bold text-primary text-uppercase mb-1">{{ flex_account.name }}</h6>
           </a>
           <div class="dropdown no-arrow">
             <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

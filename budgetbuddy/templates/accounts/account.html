@@ -205,7 +205,8 @@
             <div class="col-auto">
               <label for="fromAccount" class="sr-only"></label>
               <select class="form-control mb-2" name="fromAccount" required>
-                <option selected disabled value="">-- select transfer from account --</option>
+                <option hidden selected disabled value="">-- select transfer from account --</option>
+                <option value="">--------</option>
                 {% if active_account %}
                 <option value='{"account_id": {{active_account.id}}, "money_or_budget": "{{active_account.money_or_budget}}"}' selected>{{ active_account }}</option>
                 {% else %}
@@ -218,7 +219,8 @@
             <div class="col-auto">
               <label for="toCardSelect" class="sr-only"></label>
               <select class="form-control mb-2" name="toAccount" required>
-                <option selected disabled value="">-- select transfer to account --</option>
+                <option hidden selected disabled value="">-- select transfer to account --</option>
+                <option value="">--------</option>
                 {% if active_account.money_or_budget == 'm' %}
                   {% for account in money_accounts %}
                   <option value='{"account_id": {{account.id}}, "money_or_budget": "{{account.money_or_budget}}"}'>{{ account }}</option>
