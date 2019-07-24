@@ -2,6 +2,7 @@ from django.urls import path
 from budgetbuddy.accounts import views
 
 
+app_name = "budget"
 urlpatterns = [
     path('', views.index, name='budget'),
     path('all', views.all_accounts, name='all_accounts'),

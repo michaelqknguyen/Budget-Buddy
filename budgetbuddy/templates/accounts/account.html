@@ -16,7 +16,7 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">
       <select name="selectView" id="selectView" onChange="window.location.href=this.value">
-        <option value="{% url 'all_accounts' %}">All Accounts</option>
+        <option value="{% url 'budget:all_accounts' %}">All Accounts</option>
         {% for account in accounts %}
         <option value="/budget/{{ account.money_or_budget }}/{{ account.id }}" {% if account == active_account %} selected {% endif %}>{{ account }}</option>
         {% endfor %}
@@ -117,7 +117,7 @@
     <!-- Card Content - Collapse -->
     <div class="collapse show" id="collapseCardExample">
       <div class="card-body">
-        <form action="{% url 'transaction_create' %}" method="POST">
+        <form action="{% url 'budget:transaction_create' %}" method="POST">
           {% csrf_token %}
           <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
           <input type="hidden" name="user" value="{{ user.id }}">
@@ -184,7 +184,7 @@
     <!-- Card Content - Collapse -->
     <div class="collapse" id="collapseCardExample2">
       <div class="card-body">
-        <form action="{% url 'transaction_transfer' %}" method="POST">
+        <form action="{% url 'budget:transaction_transfer' %}" method="POST">
           {% csrf_token %}
           <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
           <input type="hidden" name="user" value="{{ user.id }}">
@@ -273,20 +273,20 @@
               <td>
                 <div class="row">
                   {% if active_account.money_or_budget == 'm' %}
-                  <form action="{% url 'transaction_edit_m' transaction.id %}" method="get">
+                  <form action="{% url 'budget:transaction_edit_m' transaction.id %}" method="get">
                   {% elif active_account.money_or_budget == 'b' %}
-                  <form action="{% url 'transaction_edit_b' transaction.id %}" method="get">
+                  <form action="{% url 'budget:transaction_edit_b' transaction.id %}" method="get">
                   {% else %}
-                  <form action="{% url 'transaction_edit' transaction.id %}" method="get">
+                  <form action="{% url 'budget:transaction_edit' transaction.id %}" method="get">
                   {% endif %}
                     <button class="fas fa-edit text-edit"></button>
                   </form>
                   {% if active_account.money_or_budget == 'm' %}
-                  <form action="{% url 'transaction_delete_m' transaction.id %}" method="post">
+                  <form action="{% url 'budget:transaction_delete_m' transaction.id %}" method="post">
                   {% elif active_account.money_or_budget == 'b' %}
-                  <form action="{% url 'transaction_delete_b' transaction.id %}" method="post">
+                  <form action="{% url 'budget:transaction_delete_b' transaction.id %}" method="post">
                   {% else %}
-                  <form action="{% url 'transaction_delete' transaction.id %}" method="post">
+                  <form action="{% url 'budget:transaction_delete' transaction.id %}" method="post">
                   {% endif %}
                     {% csrf_token %}
                     <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete?');">

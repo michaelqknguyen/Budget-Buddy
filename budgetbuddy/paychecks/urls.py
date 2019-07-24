@@ -2,6 +2,7 @@ from django.urls import path
 from budgetbuddy.paychecks import views
 
 
+app_name = "paychecks"
 urlpatterns = [
     path('', views.index, name='paychecks'),
     path('<int:paycheck_id>', views.index, name='paycheck'),
