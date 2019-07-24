@@ -179,6 +179,8 @@ LOGGING = {
 
 # Sentry
 # ------------------------------------------------------------------------------
+SENTRY_STAGE = env.bool("SENTRY_STAGE", False)  # whether to create test test sentry view
+
 SENTRY_DSN = env("SENTRY_DSN")
 SENTRY_LOG_LEVEL = env.int("DJANGO_SENTRY_LOG_LEVEL", logging.INFO)
 

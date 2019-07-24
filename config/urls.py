@@ -20,6 +20,14 @@ urlpatterns = [
     path("budget/", include("accounts.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+if settings.SENTRY_STAGE:
+    def trigger_error(request):
+        division_by_zero = 1/0
+
+    urlpatterns += [
+        path("sentry-debug/", trigger_error, name="sentry-debug"),
+    ]
+
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit
     # these url in browser to see how these error pages look like.
