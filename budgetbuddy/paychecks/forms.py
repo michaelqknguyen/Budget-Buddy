@@ -1,7 +1,7 @@
 from django import forms
-from .models import Deduction, Paystub, Paycheck
-from accounts.models import MoneyAccount
-from accounts.models import Transaction
+from budgetbuddy.paychecks.models import Deduction, Paystub, Paycheck
+from budgetbuddy.accounts.models import MoneyAccount
+from budgetbuddy.accounts.models import Transaction
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse
-from accounts.models import MoneyAccount, BudgetAccount
+from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount
 
 
 def index(request):

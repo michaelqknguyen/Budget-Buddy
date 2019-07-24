@@ -6,7 +6,7 @@ from django.views.generic import TemplateView
 from django.views import defaults as default_views
 
 urlpatterns = [
-    path("", include('pages.urls')),
+    path("", include('budgetbuddy.pages.urls')),
     path(
         "about/", TemplateView.as_view(template_name="pages/about.html"), name="about"
     ),
@@ -16,17 +16,9 @@ urlpatterns = [
     path("users/", include("budgetbuddy.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     # Your stuff: custom urls includes go here
-    path("paychecks/", include("paychecks.urls")),
-    path("budget/", include("accounts.urls")),
+    path("paychecks/", include("budgetbuddy.paychecks.urls")),
+    path("budget/", include("budgetbuddy.accounts.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-if settings.SENTRY_STAGE:
-    def trigger_error(request):
-        division_by_zero = 1/0
-
-    urlpatterns += [
-        path("sentry-debug/", trigger_error, name="sentry-debug"),
-    ]
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit

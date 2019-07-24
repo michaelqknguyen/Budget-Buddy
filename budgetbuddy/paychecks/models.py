@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from datetime import datetime
-from .choices import deduction_type_choices
+from budgetbuddy.paychecks.choices import deduction_type_choices
 from budgetbuddy.users.models import User
 
 

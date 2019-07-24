@@ -1,6 +1,6 @@
 import datetime
 from django.utils.dateparse import parse_date
-from .models import Transaction, BudgetAccount, MoneyAccount
+from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
 
 
 def subtract_one_month(t):

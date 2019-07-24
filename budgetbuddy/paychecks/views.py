@@ -8,9 +8,9 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from django.forms import modelformset_factory
 from django.http import HttpResponseRedirect
-from .models import Paycheck, PayType, Deduction, Paystub
-from .forms import DeductionForm, PaystubForm, TransactionPaystubForm, PaycheckForm
-from accounts.models import Transaction, BudgetAccount, MoneyAccount
+from budgetbuddy.paychecks.models import Paycheck, PayType, Deduction, Paystub
+from budgetbuddy.paychecks.forms import DeductionForm, PaystubForm, TransactionPaystubForm, PaycheckForm
+from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
 import re
 import datetime
 

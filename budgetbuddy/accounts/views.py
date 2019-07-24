@@ -11,9 +11,9 @@ from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
-from .models import MoneyAccount, BudgetAccount, Transaction
-from .forms import BudgetAccountForm, TransactionForm, MoneyAccountForm
-from .utils import get_transactions, get_date_range
+from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount, Transaction
+from budgetbuddy.accounts.forms import BudgetAccountForm, TransactionForm, MoneyAccountForm
+from budgetbuddy.accounts.utils import get_transactions, get_date_range
 
 
 def index(request):
@@ -148,13 +148,13 @@ def account_view(request, account_id, account_type):
     return render(request, 'accounts/account.html', context)
 
 
-def account_page_reverse(money_or_budget, money_account_id):
+def account_page_reverse(money_or_budget, account_id):
     # logic to return to page that came from for money/budget or all accounts
     # redirect to the correct page based on where we started
     if money_or_budget == 'm':
-        return HttpResponseRedirect(reverse('money_account', args=[money_account_id]))
+        return HttpResponseRedirect(reverse('money_account', args=[account_id]))
     elif money_or_budget == 'b':
-        return HttpResponseRedirect(reverse('budget_account', args=[budget_account_id]))
+        return HttpResponseRedirect(reverse('budget_account', args=[account_id]))
     else:
         return HttpResponseRedirect(reverse('all_accounts'))
 
@@ -191,12 +191,7 @@ def transfer_transaction(request):
         to_account_id = to_account['account_id']
 
         money_or_budget = request.POST.get('money_or_budget')
-        if money_or_budget == 'm':
-            return_url = HttpResponseRedirect(reverse('money_account', args=[from_account_id]))
-        elif money_or_budget == 'b':
-            return_url = HttpResponseRedirect(reverse('budget_account', args=[from_account_id]))
-        else:
-            return_url = HttpResponseRedirect(reverse('all_accounts'))
+        return_url = account_page_reverse(money_or_budget, from_account_id)
 
         if from_account['money_or_budget'] != to_account['money_or_budget']:
             messages.error(request, 'Transfers can only be made between two budget accounts or two money accounts')

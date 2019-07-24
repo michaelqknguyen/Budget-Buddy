@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from datetime import datetime
-from paychecks.models import Paystub
+from budgetbuddy.paychecks.models import Paystub
 
 
 class AccountType(models.Model):

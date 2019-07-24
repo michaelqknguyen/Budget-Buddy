@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Paycheck, PayType, Deduction, Paystub
+from budgetbuddy.paychecks.models import Paycheck, PayType, Deduction, Paystub
 
 
 class PaycheckAdmin(admin.ModelAdmin):

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AccountType, MoneyAccount, BudgetAccount, Transaction
+from budgetbuddy.accounts.models import AccountType, MoneyAccount, BudgetAccount, Transaction
 
 
 class AccountTypeAdmin(admin.ModelAdmin):
