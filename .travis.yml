@@ -1,17 +1,26 @@
 dist: xenial
 services:
-  - postgresql
+- postgresql
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq build-essential gettext python-dev zlib1g-dev libpq-dev xvfb
-  - sudo apt-get install -qq libjpeg8-dev libfreetype6-dev libwebp-dev
-  - sudo apt-get install -qq graphviz-dev python-setuptools python3-dev python-virtualenv python-pip
-  - sudo apt-get install -qq firefox automake libtool libreadline6 libreadline6-dev libreadline-dev
-  - sudo apt-get install -qq libsqlite3-dev libxml2 libxml2-dev libssl-dev libbz2-dev wget curl llvm
+- sudo apt-get update -qq
+- sudo apt-get install -qq build-essential gettext python-dev zlib1g-dev libpq-dev
+  xvfb
+- sudo apt-get install -qq libjpeg8-dev libfreetype6-dev libwebp-dev
+- sudo apt-get install -qq graphviz-dev python-setuptools python3-dev python-virtualenv
+  python-pip
+- sudo apt-get install -qq firefox automake libtool libreadline6 libreadline6-dev
+  libreadline-dev
+- sudo apt-get install -qq libsqlite3-dev libxml2 libxml2-dev libssl-dev libbz2-dev
+  wget curl llvm
 language: python
 python:
-  - "3.6"
+- '3.6'
 install:
-  - pip install -r requirements/local.txt
+- pip install -r requirements/local.txt
 script:
-  - "pytest"
+- pytest
+deploy:
+  provider: heroku
+  api_key:
+    secure: TJXyqjxDH7OjwIJHUUFt+oL+AR9UmNNBxUGqsV/RWNLXhvgQuw92ETozonq7rtGfqG5OhOELOx0g/Y0dO27PFEhKxH18d+/QfdUmPgsutaruNx/d0zuS42nXAGJ7WswIT81aIwG1PE2l5jMYn1+cdMFBpoKUKLssmS+3UillOARImlx7Kr/YziLToolD5cQar251Q9ZpPYYoZ+lhpvaS6zVfzKQ72vVsDOY9KcSpyxE6ILI9cezis72v0DqcWK+/HyWvFCiluoTmb8Oxs02ijaMmwbOBHyGWXc9x22H7SGHhjtwH3hoLUX3azhuFHGRRMWa9e7FpwAb0LqELc9qg96Yz91N5Fwbsb2i418E1KLlrTxhSeNg9/sa3ZWvWnypCY3w7melqSlqX0vpf+YdNmVpLRvABnHLwGPDXAeaeDnuTxyS4o50sSgdd8FbaRilZLu2FqZIGEF+yIH1oJzITAQxaqgPsUFurZx79UAQSkG6ywmNGmJvjaBzWAWquSBEsBERLOVfUSZ9lueOI62unesRk3XnIWZDcuXkFUd/+FuiuhY2KwFSjF5HgmDEuLwlew0/ef7JKWlGTixd+dFKPozH4K3Se5UaPgZMMfldcyPvKCcBYUueqGl06KcKZTFmtxm2Z/g2VyF6twYdvmdmLmqm1V4bvwSFpIW4wwQsTkfA=
+  app: gentle-wave-63885

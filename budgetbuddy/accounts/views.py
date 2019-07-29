@@ -152,11 +152,11 @@ def account_page_reverse(money_or_budget, account_id):
     # logic to return to page that came from for money/budget or all accounts
     # redirect to the correct page based on where we started
     if money_or_budget == 'm':
-        return HttpResponseRedirect(reverse('money_account', args=[account_id]))
+        return HttpResponseRedirect(reverse('budget:money_account', args=[account_id]))
     elif money_or_budget == 'b':
-        return HttpResponseRedirect(reverse('budget_account', args=[account_id]))
+        return HttpResponseRedirect(reverse('budget:budget_account', args=[account_id]))
     else:
-        return HttpResponseRedirect(reverse('all_accounts'))
+        return HttpResponseRedirect(reverse('budget:all_accounts'))
 
 
 def create_transaction(request):
@@ -179,7 +179,9 @@ def create_transaction(request):
         else:
             messages.error(request, "Error creating transaction")
 
-        return account_page_reverse(money_or_budget, money_account_id)
+        if money_or_budget == 'm':
+            return account_page_reverse(money_or_budget, money_account_id)
+        return account_page_reverse(money_or_budget, budget_account_id)  # handles budget and null
 
 
 def transfer_transaction(request):
@@ -250,11 +252,11 @@ class TransactionUpdateView(UpdateView):
     def get_success_url(self):
         messages.success(self.request, "{} transaction successfully updated".format(self.object.description))
         if self.money_or_budget == 'm':
-            return reverse('money_account', args=[self.object.money_account.id])
+            return reverse('budget:money_account', args=[self.object.money_account.id])
         elif self.money_or_budget == 'b':
-            return reverse('budget_account', args=[self.object.budget_account.id])
+            return reverse('budget:budget_account', args=[self.object.budget_account.id])
         else:
-            return reverse('all_accounts')
+            return reverse('budget:all_accounts')
             pass
 
 
@@ -270,11 +272,11 @@ class TransactionDeleteView(DeleteView):
     def get_success_url(self):
         messages.success(self.request, "{} transaction successfully deleted".format(self.object.description))
         if self.money_or_budget == 'm':
-            return reverse('money_account', args=[self.object.money_account.id])
+            return reverse('budget:money_account', args=[self.object.money_account.id])
         elif self.money_or_budget == 'b':
-            return reverse('budget_account', args=[self.object.budget_account.id])
+            return reverse('budget:budget_account', args=[self.object.budget_account.id])
         else:
-            return reverse('all_accounts')
+            return reverse('budget:all_accounts')
             pass
 
 
@@ -289,7 +291,7 @@ class BudgetAccountCreateView(CreateView):
         return initial
 
     def get_success_url(self):
-        return reverse('budget')
+        return reverse('budget:budget')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -308,7 +310,7 @@ class BudgetAccountUpdateView(UserPassesTestMixin, UpdateView):
         return BudgetAccount.objects.filter(pk=account_id, user=self.request.user)
 
     def get_success_url(self):
-        return reverse('budget')
+        return reverse('budget:budget')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -328,7 +330,7 @@ class MoneyAccountCreateView(CreateView):
         return initial
 
     def get_success_url(self):
-        return reverse('budget')
+        return reverse('budget:budget')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -347,7 +349,7 @@ class MoneyAccountUpdateView(UserPassesTestMixin, UpdateView):
         return MoneyAccount.objects.filter(pk=account_id, user=self.request.user)
 
     def get_success_url(self):
-        return reverse('budget')
+        return reverse('budget:budget')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

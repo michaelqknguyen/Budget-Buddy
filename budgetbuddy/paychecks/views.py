@@ -20,7 +20,7 @@ def index(request, paycheck_id=None):
     paychecks = Paycheck.objects.filter(active=True, user=user)
     if not paychecks:
         # redirect to create page if no paychecks
-        return HttpResponseRedirect(reverse('paycheck_create'))
+        return HttpResponseRedirect(reverse('paychecks:paycheck_create'))
 
     # if form get, get the requested paycheck_id
     if 'paycheck_id' in request.GET:
@@ -29,7 +29,7 @@ def index(request, paycheck_id=None):
 
     # paycheck data
     if not paycheck_id:
-        return HttpResponseRedirect(reverse('paycheck', args=(paychecks.first().id,)))
+        return HttpResponseRedirect(reverse('paychecks:paycheck', args=(paychecks.first().id,)))
     else:
         paycheck = get_object_or_404(Paycheck, pk=paycheck_id, user=user)
     pay_type = PayType.objects.filter(pk=paycheck.paychecks_per_year).first()
@@ -124,7 +124,7 @@ def add_paystub(request, paycheck_id):
                 deposit.paystub = paystub
                 deposit.save()
 
-            return HttpResponseRedirect(reverse('paycheck', args=(paycheck_id,)))
+            return HttpResponseRedirect(reverse('paychecks:paycheck', args=(paycheck_id,)))
 
     transaction_data = []
     for account in budget_accounts:
@@ -180,7 +180,7 @@ class PaystubDeleteView(UserPassesTestMixin, DeleteView):
         return Paystub.objects.filter(pk=paystub_id, user=self.request.user)
 
     def get_success_url(self):
-        return reverse('paycheck', args=(self.object.paycheck.id,))
+        return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
 def create_deduction(request):
@@ -209,7 +209,7 @@ class DeductionUpdateView(UserPassesTestMixin, UpdateView):
 
     def get_success_url(self):
         get_object_or_404(Paycheck, pk=self.object.paycheck.id, user=self.request.user)
-        return reverse('paycheck', args=(self.object.paycheck.id,))
+        return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
 class DeductionDeleteView(UserPassesTestMixin, DeleteView):
@@ -221,7 +221,7 @@ class DeductionDeleteView(UserPassesTestMixin, DeleteView):
         return Deduction.objects.filter(pk=deduction_id, user=self.request.user)
 
     def get_success_url(self):
-        return reverse('paycheck', args=(self.object.paycheck.id,))
+        return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
 class PaycheckCreateView(CreateView):
@@ -236,7 +236,7 @@ class PaycheckCreateView(CreateView):
 
     def get_success_url(self):
         get_object_or_404(Paycheck, pk=self.object.id, user=self.request.user)
-        return reverse('paycheck', args=(self.object.id,))
+        return reverse('paychecks:paycheck', args=(self.object.id,))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -256,4 +256,4 @@ class PaycheckUpdateView(UserPassesTestMixin, UpdateView):
 
     def get_success_url(self):
         get_object_or_404(Paycheck, pk=self.object.id, user=self.request.user)
-        return reverse('paycheck', args=(self.object.id,))
+        return reverse('paychecks:paycheck', args=(self.object.id,))

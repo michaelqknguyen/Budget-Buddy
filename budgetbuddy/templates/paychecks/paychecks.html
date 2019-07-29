@@ -8,7 +8,7 @@
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
-    <form action="{% url 'paychecks' %}">
+    <form action="{% url 'paychecks:paychecks' %}">
       <select name="paycheck_id" id="paycheck_id" onChange="form.submit();">
         {% for pc in paychecks %}
         <option value="{{ pc.id }}" {% if paycheck == pc %} selected {% endif %}>{{ pc }}</option>
@@ -17,8 +17,8 @@
     </form>
   </h1>
   <div class="custom-control">
-    <a href="{% url 'paycheck_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Salary</span></a>
-    <a href="{% url 'paycheck_edit' paycheck.id %}" class="btn btn-warning"><i class="fas fa-edit"></i> <span>Edit {{ paycheck }} Salary</span></a>
+    <a href="{% url 'paychecks:paycheck_create' %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Salary</span></a>
+    <a href="{% url 'paychecks:paycheck_edit' paycheck.id %}" class="btn btn-warning"><i class="fas fa-edit"></i> <span>Edit {{ paycheck }} Salary</span></a>
   </div>
 </div>
 <!-- Salary and final take home pay -->
@@ -92,10 +92,10 @@
                 <td>${{ deduction.amount | intcomma }}</td>
                 <td>
                   <div class="row">
-                    <form action="{% url 'deduction_edit' deduction.id %}" method="get">
+                    <form action="{% url 'paychecks:deduction_edit' deduction.id %}" method="get">
                       <button class="fas fa-edit text-edit"></button>
                     </form>
-                    <form action="{% url 'deduction_delete' deduction.id %}" method="post">
+                    <form action="{% url 'paychecks:deduction_delete' deduction.id %}" method="post">
                       {% csrf_token %}
                       <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete?');">
                     </form>
@@ -122,7 +122,7 @@
       </div>
       <div class="card-body">
         <div class="mb-2">
-          <a href="{% url 'paystub_add' paycheck.id %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Paystub</span></a>
+          <a href="{% url 'paychecks:paystub_add' paycheck.id %}" class="btn btn-success"><i class="fas fa-plus"></i> <span>Add New Paystub</span></a>
         </div>
         <div class="table-responsive">
           <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
@@ -141,7 +141,7 @@
                 <td>${{ paystub.spent_in_period | intcomma }}</td>
                 <td>${{ paystub.gross_pay | intcomma }}</td>
                 <td>
-                  <form action="{% url 'paystub_delete' paystub.id %}" method="post">
+                  <form action="{% url 'paychecks:paystub_delete' paystub.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete this paystub?');">
                   </form>
@@ -249,7 +249,7 @@
         </button>
       </div>
       <div class="modal-body mx-3">
-        <form action="{% url 'deduction_add' %}" method="POST">
+        <form action="{% url 'paychecks:deduction_add' %}" method="POST">
           {% csrf_token %}
           <input type="hidden" name="user_id" value="{{ user.id }}">
           <input type="hidden" name="paycheck_id" value="{{ paycheck.id }}">
