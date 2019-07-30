@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
@@ -15,6 +16,7 @@ import re
 import datetime
 
 
+@login_required
 def index(request, paycheck_id=None):
     user = request.user
     paychecks = Paycheck.objects.filter(active=True, user=user)
@@ -71,6 +73,7 @@ def index(request, paycheck_id=None):
     return render(request, 'paychecks/paychecks.html', context)
 
 
+@login_required
 def add_paystub(request, paycheck_id):
     user = request.user
     today = datetime.datetime.now()
@@ -171,7 +174,7 @@ def add_paystub(request, paycheck_id):
     return render(request, 'paychecks/paystub_create.html', context)
 
 
-class PaystubDeleteView(UserPassesTestMixin, DeleteView):
+class PaystubDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Paystub
 
     def test_func(self):
@@ -183,6 +186,7 @@ class PaystubDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
+@login_required
 def create_deduction(request):
     if request.method == 'POST':
         paycheck_id = request.POST['paycheck']
@@ -197,7 +201,7 @@ def create_deduction(request):
         return redirect('/paychecks/'+paycheck_id)
 
 
-class DeductionUpdateView(UserPassesTestMixin, UpdateView):
+class DeductionUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Deduction
     form_class = DeductionForm
     template_name = 'paychecks/deduction_update.html'
@@ -212,7 +216,7 @@ class DeductionUpdateView(UserPassesTestMixin, UpdateView):
         return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
-class DeductionDeleteView(UserPassesTestMixin, DeleteView):
+class DeductionDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Deduction
 
     def test_func(self):
@@ -224,7 +228,7 @@ class DeductionDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('paychecks:paycheck', args=(self.object.paycheck.id,))
 
 
-class PaycheckCreateView(CreateView):
+class PaycheckCreateView(LoginRequiredMixin, CreateView):
     model = Paycheck
     form_class = PaycheckForm
     template_name = 'paychecks/paycheck_form.html'
@@ -244,7 +248,7 @@ class PaycheckCreateView(CreateView):
         return context
 
 
-class PaycheckUpdateView(UserPassesTestMixin, UpdateView):
+class PaycheckUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Paycheck
     form_class = PaycheckForm
     template_name = 'paychecks/paycheck_form.html'

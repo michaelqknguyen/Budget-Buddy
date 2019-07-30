@@ -54,8 +54,11 @@ class TestPaycheckView(TestCase):
         request = self.factory.get('/paychecks/')
         request.user = self.user
 
-        response = index(request)
-        response.client = Client()
+        response = response_attach_client(
+            index(request),
+            self.user.username,
+            self.password
+        )
         self.assertRedirects(response, reverse('paychecks:paycheck_create'))
 
     def test_redirect_first_paycheck(self):

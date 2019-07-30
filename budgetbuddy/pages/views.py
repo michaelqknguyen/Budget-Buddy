@@ -1,12 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount
 
 
+@login_required
 def index(request):
     user = request.user
     if user.is_anonymous:
