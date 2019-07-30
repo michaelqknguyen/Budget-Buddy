@@ -6,7 +6,8 @@ from itertools import chain
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -16,6 +17,7 @@ from budgetbuddy.accounts.forms import BudgetAccountForm, TransactionForm, Money
 from budgetbuddy.accounts.utils import get_transactions, get_date_range
 
 
+@login_required
 def index(request):
     user = request.user
 
@@ -80,18 +82,22 @@ def index(request):
     return render(request, 'accounts/accounts.html', context)
 
 
+@login_required
 def money_account(request, account_id):
     return account_view(request, account_id, MoneyAccount)
 
 
+@login_required
 def budget_account(request, account_id):
     return account_view(request, account_id, BudgetAccount)
 
 
+@login_required
 def all_accounts(request):
     return account_view(request, None, None)
 
 
+@login_required
 def account_view(request, account_id, account_type):
     user = request.user
 
@@ -159,6 +165,7 @@ def account_page_reverse(money_or_budget, account_id):
         return HttpResponseRedirect(reverse('budget:all_accounts'))
 
 
+@login_required
 def create_transaction(request):
     if request.method == 'POST':
         money_or_budget = request.POST.get('money_or_budget')
@@ -184,6 +191,7 @@ def create_transaction(request):
         return account_page_reverse(money_or_budget, budget_account_id)  # handles budget and null
 
 
+@login_required
 def transfer_transaction(request):
     if request.method == 'POST':
         # account json format should have account_id and money_or_budget
@@ -238,7 +246,7 @@ def transfer_transaction(request):
         return return_url
 
 
-class TransactionUpdateView(UpdateView):
+class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     model = Transaction
     form_class = TransactionForm
     template = 'accounts/transaction_form.html'
@@ -260,7 +268,7 @@ class TransactionUpdateView(UpdateView):
             pass
 
 
-class TransactionDeleteView(DeleteView):
+class TransactionDeleteView(LoginRequiredMixin, DeleteView):
     model = Transaction
     money_or_budget = None
 
@@ -280,7 +288,7 @@ class TransactionDeleteView(DeleteView):
             pass
 
 
-class BudgetAccountCreateView(CreateView):
+class BudgetAccountCreateView(LoginRequiredMixin, CreateView):
     model = BudgetAccount
     form_class = BudgetAccountForm
     template_name = 'accounts/account_form.html'
@@ -299,7 +307,7 @@ class BudgetAccountCreateView(CreateView):
         return context
 
 
-class BudgetAccountUpdateView(UserPassesTestMixin, UpdateView):
+class BudgetAccountUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = BudgetAccount
     form_class = BudgetAccountForm
     template_name = 'accounts/account_form.html'
@@ -318,7 +326,7 @@ class BudgetAccountUpdateView(UserPassesTestMixin, UpdateView):
         return context
 
 
-class MoneyAccountCreateView(CreateView):
+class MoneyAccountCreateView(LoginRequiredMixin, CreateView):
     model = MoneyAccount
     form_class = MoneyAccountForm
     template_name = 'accounts/account_form.html'
@@ -338,7 +346,7 @@ class MoneyAccountCreateView(CreateView):
         return context
 
 
-class MoneyAccountUpdateView(UserPassesTestMixin, UpdateView):
+class MoneyAccountUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = MoneyAccount
     form_class = MoneyAccountForm
     template_name = 'accounts/account_form.html'
