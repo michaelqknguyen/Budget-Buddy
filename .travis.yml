@@ -19,6 +19,8 @@ install:
 - pip install -r requirements/local.txt
 script:
 - pytest
+after_success:
+- coveralls
 deploy:
   provider: heroku
   api_key:
