@@ -11,6 +11,9 @@ budgetbuddy
      :alt: Black code style
 .. image:: https://travis-ci.org/michaelqknguyen/Budget-Buddy.svg?branch=master
     :target: https://travis-ci.org/michaelqknguyen/Budget-Buddy
+.. image:: https://coveralls.io/repos/github/michaelqknguyen/Budget-Buddy/badge.svg?branch=master
+    :target: https://coveralls.io/github/michaelqknguyen/Budget-Buddy?branch=master
+
 
 
 :License: MIT
