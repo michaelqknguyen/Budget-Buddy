@@ -1,4 +1,5 @@
 import pytest
+from random import randint
 from django.test import TransactionTestCase
 from django.db.utils import IntegrityError
 from budgetbuddy.paychecks.forms import PaycheckForm, DeductionForm, PaystubForm, TransactionPaystubForm
@@ -84,3 +85,33 @@ class TestTransactionPaystubForm(TransactionTestCase):
             form.save()
 
         form.save(commit=False)
+
+    def test_money_accounts_in_form(self):
+        proto_user = UserFactory.create()
+        proto_moneys = MoneyAccountFactory.create_batch(
+            randint(1, 10),
+            user=proto_user,
+        )
+        proto_budget = BudgetAccountFactory.create(user=proto_user)
+        proto_transaction = TransactionFactory.build(user=proto_user)
+
+        form = TransactionPaystubForm({
+            "amount_spent": proto_transaction.amount_spent,
+            "budget_account": proto_budget.id,
+            # "money_account": proto_money.id,
+            "monthly_contribution": 40.2,
+            "month_contribution": 30.2
+        }, user=proto_user)
+        assert form.is_valid()
+
+        # user, transaction_date, description still needed
+        with self.assertRaises(IntegrityError):
+            form.save()
+
+        # show money_account list made
+        self.assertEqual(len(proto_moneys), form.fields['money_account'].queryset.count())
+        self.assertQuerysetEqual(
+            form.fields['money_account'].queryset,
+            [repr(m) for m in proto_moneys],
+            ordered=False
+        )
