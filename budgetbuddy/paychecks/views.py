@@ -101,7 +101,9 @@ def add_paystub(request, paycheck_id):
                 contribution.user = user
                 contribution.transaction_date = end_date
                 contribution.paystub = paystub
-                contribution.save()
+                # dont create for $0 contribution
+                if contribution.amount_spent != 0:
+                    contribution.save()
 
             # Creating the flex budget contribution
             flex_contribution = Transaction(
