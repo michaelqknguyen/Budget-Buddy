@@ -9,7 +9,7 @@ class Paycheck(models.Model):
     annual_salary = models.DecimalField(max_digits=10, decimal_places=2)
     paychecks_per_year = models.IntegerField()
     active = models.BooleanField(default=True)
-    creation_date = models.DateField(default=timezone.now(), blank=True)
+    creation_date = models.DateField(default=timezone.now, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):
@@ -23,7 +23,7 @@ class Deduction(models.Model):
                                       choices=deduction_type_choices)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     active = models.BooleanField(default=True)
-    creation_date = models.DateTimeField(default=timezone.now(), blank=True)
+    creation_date = models.DateTimeField(default=timezone.now, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):
@@ -35,7 +35,7 @@ class Paystub(models.Model):
     gross_pay = models.DecimalField(max_digits=10, decimal_places=2)
     start_date = models.DateField()
     end_date = models.DateField()
-    creation_date = models.DateTimeField(default=timezone.now(), blank=True)
+    creation_date = models.DateTimeField(default=timezone.now, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):
