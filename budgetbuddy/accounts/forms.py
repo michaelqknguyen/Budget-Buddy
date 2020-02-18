@@ -7,7 +7,8 @@ from crispy_forms.layout import Submit
 class BudgetAccountForm(forms.ModelForm):
     class Meta:
         model = BudgetAccount
-        fields = ('name', 'account_type', 'contribution_amount', 'month_intervals', 'user', 'active')
+        fields = ('name', 'account_type', 'contribution_amount', 'month_intervals', 'user',
+                  'assigned_paycheck', 'active')
         widgets = {'user': forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):

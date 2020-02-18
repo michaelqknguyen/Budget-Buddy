@@ -11,7 +11,9 @@ from django.forms import modelformset_factory
 from django.http import HttpResponseRedirect
 from budgetbuddy.paychecks.models import Paycheck, PayType, Deduction, Paystub
 from budgetbuddy.paychecks.forms import DeductionForm, PaystubForm, TransactionPaystubForm, PaycheckForm
+from budgetbuddy.paychecks.utils import calculate_paycheck_contribution
 from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
+from budgetbuddy.accounts.utils import round_up
 import re
 import datetime
 
@@ -142,9 +144,14 @@ def add_paystub(request, paycheck_id):
             transaction_date__year=today.year, transaction_date__month=today.month
         )
         account_trans['month_contribution'] = account_trans_list.aggregate(Sum('amount_spent'))['amount_spent__sum'] or 0
-        account_trans['monthly_contribution'] = round(account.contribution_amount/account.month_intervals, 2)
-        # initialize paycheck contribution as monthly_contribution * 12 / number of paychecks per year
-        account_trans['amount_spent'] = round(account_trans['monthly_contribution']*12/paycheck.paychecks_per_year, 2)
+        account_trans['monthly_contribution'] = round_up(account.contribution_amount/account.month_intervals, 2)
+        if paycheck in account.assigned_paycheck.all() or not account.assigned_paycheck.exists():
+            # if budget account assigned to this paycheck
+            # initialize paycheck contribution as monthly_contribution * 12 / number of paychecks per year
+            account_trans['amount_spent'] = calculate_paycheck_contribution(account, paycheck)
+            # account_trans['amount_spent'] = round(account_trans['monthly_contribution']*12/paycheck.paychecks_per_year, 2)
+        else:
+            account_trans['amount_spent'] = 0
         transaction_data.append(account_trans)
     transaction_formset = TransactionFormSet(initial=transaction_data, prefix='budget',
                                              queryset=Transaction.objects.none())
