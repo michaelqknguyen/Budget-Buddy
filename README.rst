@@ -49,6 +49,22 @@ Running type checks with mypy:
 
   $ mypy budgetbuddy
 
+Local Dev Migrations
+^^^^^^^^^^^^^^^^^^^^
+
+Make migrations
+
+::
+
+  $ python manage.py makemigrations
+  $ python manage.py migrate
+
+Run Locally
+
+::
+
+  $ python manage.py runserver
+
 Test coverage
 ^^^^^^^^^^^^^
 
