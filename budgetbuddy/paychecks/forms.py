@@ -97,7 +97,12 @@ class TransactionPaystubForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if self.user:
-            self.fields['money_account'].queryset = MoneyAccount.objects.filter(user=self.user, active=True)
+            self.fields['money_account'].queryset = (
+                MoneyAccount
+                .objects
+                .filter(user=self.user, active=True)
+                .order_by('name')
+            )
         self.helper = FormHelper()
         self.helper.form_method = 'post'
         self.helper.add_input(Submit('submit', 'Submit'))
