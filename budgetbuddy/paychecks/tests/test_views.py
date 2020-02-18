@@ -3,32 +3,16 @@ from factory import Faker
 from random import randint
 from decimal import Decimal
 from django.test import RequestFactory, TestCase, Client
-from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils import timezone
 from budgetbuddy.paychecks.views import index, add_paystub, PaycheckCreateView
 from budgetbuddy.paychecks.models import Paycheck, Paystub, Deduction
 from budgetbuddy.paychecks.tests.factories import PaycheckFactory, PaystubFactory, DeductionFactory
 from budgetbuddy.accounts.tests.factories import MoneyAccountFactory, BudgetAccountFactory, TransactionFactory, BudgetAccountTypeFactory
+from budgetbuddy.accounts.tests.utils import create_flex_account
 from budgetbuddy.users.tests.factories import UserFactory
+from budgetbuddy.users.tests.utils import create_another_user
 
 pytestmark = pytest.mark.django_db
-
-
-def create_another_user():
-    user = UserFactory()
-    user.save()
-    return user
-
-
-def create_paycheck(user):
-    paycheck = PaycheckFactory(user=user)
-    return paycheck
-
-
-def create_flex_account(user):
-    acc_type = BudgetAccountTypeFactory(account_type='Flex')
-    return BudgetAccountFactory(account_type=acc_type, user=user)
 
 
 def response_attach_client(response, username, password):
