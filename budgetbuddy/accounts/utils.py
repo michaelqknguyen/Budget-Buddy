@@ -1,4 +1,5 @@
 import datetime
+import math
 from django.utils.dateparse import parse_date
 from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
 
@@ -40,3 +41,8 @@ def get_transactions(user, active_account=None, account_type=None):
         return Transaction.objects.filter(user=user, budget_account=active_account)
     else:
         return Transaction.objects.filter(user=user)
+
+
+def round_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.ceil(n * multiplier) / multiplier

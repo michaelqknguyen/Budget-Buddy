@@ -1,4 +1,4 @@
-from factory import Faker, SubFactory
+from factory import Faker, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from budgetbuddy.paychecks.tests.factories import PaystubFactory, PaycheckFactory
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount, Transaction, AccountType
@@ -44,7 +44,17 @@ class BudgetAccountFactory(DjangoModelFactory):
         right_digits=2
     )
     month_intervals = Faker("random_int", min=1, max=24)
-    assigned_paycheck = SubFactory(PaycheckFactory)
+
+    @post_generation
+    def assigned_paycheck(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for assigned_paycheck in extracted:
+                self.assigned_paycheck.add(assigned_paycheck)
 
     class Meta:
         model = BudgetAccount

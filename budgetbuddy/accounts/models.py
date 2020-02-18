@@ -40,8 +40,7 @@ class BudgetAccount(Account):
                                      limit_choices_to={'is_cash_account': False})
     contribution_amount = models.DecimalField(max_digits=8, decimal_places=2)
     month_intervals = models.IntegerField()
-    assigned_paycheck = models.ForeignKey(Paycheck, on_delete=models.DO_NOTHING,
-                                          blank=True, null=True)
+    assigned_paycheck = models.ManyToManyField(Paycheck, blank=True)
 
     @property
     def monthly_contribution(self):
