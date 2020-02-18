@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from datetime import datetime
-from budgetbuddy.paychecks.models import Paystub
+from budgetbuddy.paychecks.models import Paystub, Paycheck
 
 
 class AccountType(models.Model):
@@ -40,6 +40,8 @@ class BudgetAccount(Account):
                                      limit_choices_to={'is_cash_account': False})
     contribution_amount = models.DecimalField(max_digits=8, decimal_places=2)
     month_intervals = models.IntegerField()
+    assigned_paycheck = models.ForeignKey(Paycheck, on_delete=models.DO_NOTHING,
+                                          blank=True, null=True)
 
     @property
     def monthly_contribution(self):

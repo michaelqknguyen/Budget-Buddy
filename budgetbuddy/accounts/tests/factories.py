@@ -1,6 +1,6 @@
 from factory import Faker, SubFactory
 from factory.django import DjangoModelFactory
-from budgetbuddy.paychecks.tests.factories import PaystubFactory
+from budgetbuddy.paychecks.tests.factories import PaystubFactory, PaycheckFactory
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount, Transaction, AccountType
 from budgetbuddy.users.tests.factories import UserFactory
 
@@ -44,6 +44,7 @@ class BudgetAccountFactory(DjangoModelFactory):
         right_digits=2
     )
     month_intervals = Faker("random_int", min=1, max=24)
+    assigned_paycheck = SubFactory(PaycheckFactory)
 
     class Meta:
         model = BudgetAccount
