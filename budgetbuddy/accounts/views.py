@@ -121,11 +121,27 @@ def account_view(request, account_id, account_type):
 
     # get transactions for this account
     all_transactions = get_transactions(user, active_account, account_type)
-    balance = all_transactions.aggregate(
-        balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
+    if account_id:
+        balance = all_transactions.aggregate(
+            balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
+    else:
+        # only consider actual money account balances for balance calc for all account view
+        balance = (
+            all_transactions
+            .filter(money_account__isnull=False)
+            .aggregate(
+                balance=Coalesce(Sum('amount_spent'), 0))
+            .get('balance', 0)
+        )
     subset_transactions = all_transactions.filter(transaction_date__range=(start_date,end_date))
-    subset_spent = subset_transactions.aggregate(
-        spent=Coalesce(Sum('amount_spent'), 0)).get('spent', 0)
+    # exclude paycheck contributions from the "spent" calculation
+    subset_spent = (
+        subset_transactions
+        .filter(paystub__isnull=True)
+        .aggregate(
+            spent=Coalesce(Sum('amount_spent'), 0))
+        .get('spent', 0)
+    )
 
     # initialize transaction form
     initial_transaction = {
