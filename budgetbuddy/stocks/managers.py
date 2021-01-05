@@ -63,6 +63,9 @@ class StockSharesManager(models.Manager):
         # don't include the args if the value is none
         final_query_args = {k: v for k, v in query_args.items() if v is not None}
         queryset = super().get_queryset().filter(**final_query_args)
-        total = queryset.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))
+        total = queryset.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))['total']
 
-        return round(total['total'], 2)
+        if total is None:
+            return 0
+
+        return round(total, 2)
