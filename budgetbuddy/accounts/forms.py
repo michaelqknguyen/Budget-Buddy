@@ -21,7 +21,7 @@ class BudgetAccountForm(forms.ModelForm):
 class MoneyAccountForm(forms.ModelForm):
     class Meta:
         model = MoneyAccount
-        fields = ('name', 'account_type', 'user', 'date_opened', 'date_closed', 'active')
+        fields = ('name', 'account_type', 'user', 'date_opened', 'date_closed', 'is_brokerage', 'active')
         widgets = {'user': forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):

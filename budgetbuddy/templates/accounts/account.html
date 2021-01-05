@@ -40,13 +40,13 @@
   </div>
   <!-- Content Row -->
   <div class="row">
-    <!-- Earnings (Monthly) Card Example -->
+    <!-- Earnings (Monthly) Card Example -- liquid balance -->
     <div class="col-xl-4 col-md-6 mb-4">
       <div class="card shadow h-100 py-2">
         <div class="card-body">
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Balance</div>
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Liquid Balance</div>
               <div class="h5 mb-0 font-weight-bold 
               {% if balance < 0 %}
               text-danger
@@ -61,7 +61,23 @@
         </div>
       </div>
     </div>
-    <!-- Earnings (Monthly) Card Example -->
+    <!-- Earnings (Monthly) Card Example -- investment balance -->
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Investment Balance</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">${{ investment_balance | intcomma }}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-comments fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Spent card -->
     <div class="col-xl-4 col-md-6 mb-4">
       <div class="card shadow h-100 py-2">
         <div class="card-body">
@@ -86,22 +102,6 @@
         </div>
       </div>
     </div>
-    <!-- Pending Requests Card Example -->
-    <div class="col-xl-4 col-md-6 mb-4">
-      <div class="card shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Number of Transactions (in time frame)</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{ transactions|length }}</div>
-            </div>
-            <div class="col-auto">
-              <i class="fas fa-comments fa-2x text-gray-300"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
   <!-- Content Row -->
   <!-- DataTales Example -->
@@ -114,7 +114,7 @@
     <a href="#collapseCardExample" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample">
       <h6 class="m-0 font-weight-bold text-primary">Add New Transaction</h6>
     </a>
-    <!-- Card Content - Collapse -->
+    <!-- Card Content - Collapse -- transaction -->
     <div class="collapse show" id="collapseCardExample">
       <div class="card-body">
         <form action="{% url 'budget:transaction_create' %}" method="POST">
@@ -175,6 +175,89 @@
       </div>
     </div>
   </div>
+  <!-- Collapsable Card Example -- stock transaction -->
+  {% if active_account.money_or_budget == 'b' or active_account.is_brokerage %}
+  <div class="card shadow mb-4">
+    <!-- Card Header - Accordion -->
+    <a href="#collapseCardExample3" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample3">
+      <h6 class="m-0 font-weight-bold text-primary">New Stock Transaction</h6>
+    </a>
+    <!-- Card Content - Collapse -->
+    <div class="collapse" id="collapseCardExample3">
+      <div class="card-body">
+        <form action="{% url 'stocks:transaction_create' %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
+          <input type="hidden" name="user" value="{{ user.id }}">
+          <div class="form-row align-items-center">
+            <div class="col-auto">
+              <label class="sr-only" for="transaction_date">Transaction Date</label>
+              <input class="form-control mb-2" type="date" value="{{ transaction_form.transaction_date|date:"Y-m-d" }}" name="transaction_date" autofocus required>
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="ticker">Stock Ticker</label>
+              <input type="text" class="form-control mb-2" name="ticker" placeholder="Stock Ticker, AAPL, MSFT..">
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" data-error="wrong" data-success="right" for="transaction_type">Type</label>
+              <select class="form-control mb-2" name="transaction_type" required>
+                <option disabled>-- buy or sell --</option>
+                <option value="B" selected>Buy</option>
+                <option value="S">Sell</option>
+              </select>
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="num_shares">Num Shares</label>
+              <input type="text" class="form-control mb-2" name="num_shares" placeholder="Number of shares">
+            </div>
+            <div class="col-auto">
+              <label class="sr-only" for="price">Amount</label>
+              <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">$</div>
+                </div>
+                <input type="number" step=".01" onchange="setTwoNumberDecimal" class="form-control" name="price" id="moneyInput" placeholder="0.00" required>
+              </div>
+            </div>
+            <div class="col-auto">
+              <label for="brokerage_account" class="sr-only"></label>
+              <select class="form-control mb-2" name="brokerage_account">
+                <option hidden selected disabled value="">-- select account --</option>
+                <option value="">--------</option>
+                {% if active_account.money_or_budget == 'm' %}
+                <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
+                {% else %}
+                  {% for account in money_accounts %}
+                  {% if account.is_brokerage %}
+                  <option value="{{ account.id }}">{{ account }}</option>
+                  {% endif %}
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <label for="budget_account" class="sr-only"></label>
+              <select class="form-control mb-2" name="budget_account">
+                <option hidden selected disabled value="">-- select category --</option>
+                <option value="">--------</option>
+                {% if active_account.money_or_budget == 'b' %}
+                <option value="{{ active_account.id }}" selected>{{ active_account }}</option>
+                {% else %}
+                  {% for account in budget_accounts %}
+                  <option value="{{ account.id }}">{{ account }}</option>
+                  {% endfor %}
+                {% endif %}
+              </select>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary mb-2">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <!-- Collapsable Card Example -->
   <div class="card shadow mb-4">
     <!-- Card Header - Accordion -->
@@ -244,7 +327,12 @@
       </div>
     </div>
   </div>
+  <!-- Card Table - Transactions -->
   <div class="card shadow mb-4">
+    <!-- Card Header -->
+    <div class="d-block card-header py-3" >
+      <h6 class="m-0 font-weight-bold text-primary">Transactions</h6>
+    </div>
     <div class="card-body">
       <div class="table-responsive">
         <table class="table table-bordered" id="transTable" width="100%" cellspacing="0">
@@ -300,6 +388,102 @@
       </div>
     </div>
   </div>
+  <!-- Card Table - Stock Shares -->
+  {% if active_account.is_brokerage or stock_transactions %}
+  <div class="card shadow mb-4">
+    <!-- Card Header -->
+    <div class="d-block card-header py-3" >
+      <h6 class="m-0 font-weight-bold text-primary">Stock Shares</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="stockTransTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Stock</th>
+              <th>Shares</th>
+              <!-- <th>Share Price</th> -->
+              <th>Brokerage Account</th>
+              <th>Budget Account</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for share in stock_shares %}
+            {% if share.num_shares > 0 %}
+            <tr>
+              <td>{{ share.stock }}</td>
+              <td>{{ share.num_shares }}</td>
+              <!-- <td>{{ share.stock.market_price | intcomma }}</td> -->
+              <td>{{ share.brokerage_account }}</td>
+              <td>{{ share.budget_account }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <!-- Card Table - Stock Transactions -->
+  {% if active_account.is_brokerage or stock_transactions %}
+  <div class="card shadow mb-4">
+    <!-- Card Header -->
+    <div class="d-block card-header py-3" >
+      <h6 class="m-0 font-weight-bold text-primary">Stock Transactions</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="stockTransTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Shares</th>
+              <th>Transaction Type</th>
+              <th>Num</th>
+              <th>Share Price</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for transaction in stock_transactions %}
+            <tr>
+              <td>{{ transaction.transaction_date | date:"Y-m-d" }}</td>
+              <td>{{ transaction.shares }}</td>
+              <td>{{ transaction.transaction_type }}</td>
+              <td>{{ transaction.num_shares }}</td>
+              <td>${{ transaction.price | intcomma }}</td>
+              <td>
+                <div class="row">
+                  {% if active_account.money_or_budget == 'm' %}
+                  <form action="{% url 'stocks:transaction_edit_m' transaction.id %}" method="get">
+                  {% elif active_account.money_or_budget == 'b' %}
+                  <form action="{% url 'stocks:transaction_edit_b' transaction.id %}" method="get">
+                  {% else %}
+                  <form action="{% url 'stocks:transaction_edit' transaction.id %}" method="get">
+                  {% endif %}
+                    <button class="fas fa-edit text-edit"></button>
+                  </form>
+                  {% if active_account.money_or_budget == 'm' %}
+                  <form action="{% url 'stocks:transaction_delete_m' transaction.id %}" method="post">
+                  {% elif active_account.money_or_budget == 'b' %}
+                  <form action="{% url 'stocks:transaction_delete_b' transaction.id %}" method="post">
+                  {% else %}
+                  <form action="{% url 'stocks:transaction_delete' transaction.id %}" method="post">
+                  {% endif %}
+                    {% csrf_token %}
+                    <button type="submit" class="fas fa-trash text-red" onclick="return confirm('Are you sure you want to delete?');">
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <!-- /.container-fluid -->
   <!-- End of Main Content -->
   <!-- Footer -->

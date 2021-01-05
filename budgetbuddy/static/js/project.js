@@ -10,7 +10,8 @@
 
 // Call the dataTables jQuery plugin
 $(document).ready(function() {
-  $('#transTable').DataTable({
+  // $('#transTable').DataTable({
+  $('table.table').DataTable({
     "order": [[ 0, "desc" ]]
   });
 

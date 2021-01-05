@@ -25,6 +25,10 @@ class MoneyAccountFactory(DjangoModelFactory):
         model = MoneyAccount
 
 
+class BrokerageAccountFactory(MoneyAccountFactory):
+    is_brokerage = True
+
+
 class BudgetAccountTypeFactory(DjangoModelFactory):
     account_type = Faker('random_element', elements=BUDGET_CHOICES)
     is_cash_account = False

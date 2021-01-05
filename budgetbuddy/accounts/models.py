@@ -30,6 +30,8 @@ class MoneyAccount(Account):
     date_opened = models.DateField(default=datetime.now)
     date_closed = models.DateField(null=True, blank=True)
 
+    is_brokerage = models.BooleanField(default=False)
+
     @property
     def money_or_budget(self):
         return 'm'
