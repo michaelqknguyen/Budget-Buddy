@@ -44,6 +44,9 @@ Account Overview
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
               <div class="h5 mb-0 font-weight-bold {% if not account.active %} text-gray-300 {% elif account.total > 0 %} text-success {% elif account.total < 0 %} text-danger {% endif %}">${{ account.total | intcomma }}</div>
+              {% if account.is_brokerage %}
+              <div class="h8 ml-2 font-weight-bold {% if not account.active %} text-gray-300 {% else %} text-gray-500 text-opacity-50 {% endif %}">${{ account.investment_sum | intcomma }}</div>
+              {% endif %}
             </div>
             <div class="col-auto">
               <i class="fas 
@@ -123,7 +126,6 @@ Account Overview
           <thead>
             <tr>
               <th>Expense</th>
-              <th>Type</th>
               <th>Monthly Contribution</th>
               <th>Annual Contribution</th>
               <th>Currently Have</th>
@@ -137,11 +139,14 @@ Account Overview
                 <a href="{% url 'budget:budget_account' account.id %}" class="nav {% if not account.active %}
                   text-gray-300
                 {% endif %}">{{ account.name }}</a>
-              </td>
-              <td>{{ account.account_type }}</td>
               <td>${{ account.monthly_contribution | floatformat:2 | intcomma}}</td>
               <td>${{ account.annual_contribution | floatformat:2 | intcomma}}</td>
-              <td class="{% if not account.active %} text-gray-300 {% elif account.total >= 0 %} text-money {% elif account.total < 0 %} text-danger {% endif %}">${{ account.total | intcomma }}</td>
+              <td>
+                <div class="{% if not account.active %} text-gray-300 {% elif account.total > 0 %} text-money {% elif account.total < 0 %} text-danger {% endif %}">${{ account.total | intcomma }}</div>
+                {% if account.investment_sum > 0 %}
+                <div class="ml-2 {% if not account.active %} text-gray-300 {% else %} text-gray-500 text-opacity-50 {% endif %}">${{ account.investment_sum | intcomma }}</div>
+                {% endif %}
+              </td>
               <td>
                 <div class="row">
                   <form action="{% url 'budget:budget_account_edit' account.id %}" method="get">

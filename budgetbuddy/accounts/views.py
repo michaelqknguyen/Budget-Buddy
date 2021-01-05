@@ -72,7 +72,7 @@ def index(request):
             user=user)
         .exclude(Q(account_type__account_type='Flex'))
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
-        .order_by('-account_type', 'name')
+        .order_by('name')
     )
 
     context = {

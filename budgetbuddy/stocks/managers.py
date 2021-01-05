@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Sum, F
 
 
 def get_stock_prices(tickers):
@@ -48,9 +49,20 @@ class StockManager(models.Manager):
 
 
 class StockSharesManager(models.Manager):
+
     def find_all_shares(self, user, stock=None, brokerage_account=None, budget_account=None):
         """find all shares in all accounts for a ticker"""
         query_args = {'user': user, 'stock': stock, 'brokerage_account': brokerage_account, 'budget_account': budget_account}
         # don't include the args if the value is none
         final_query_args = {k: v for k, v in query_args.items() if v is not None}
         return super().get_queryset().filter(**final_query_args)
+
+    def investment_sum(self, user=None, stock=None, brokerage_account=None, budget_account=None):
+        """find sum of shares in accounts"""
+        query_args = {'user': user, 'stock': stock, 'brokerage_account': brokerage_account, 'budget_account': budget_account}
+        # don't include the args if the value is none
+        final_query_args = {k: v for k, v in query_args.items() if v is not None}
+        queryset = super().get_queryset().filter(**final_query_args)
+        total = queryset.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))
+
+        return round(total['total'], 2)

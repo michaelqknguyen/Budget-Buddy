@@ -6,6 +6,7 @@ from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount
+from budgetbuddy.stocks.models import StockShares
 
 
 @login_required
@@ -36,6 +37,8 @@ def index(request):
         .aggregate(balance_total=Coalesce(Sum('total'), 0))
     ).get('balance_total')
 
+    investment_balance = StockShares.objects.investment_sum(user)
+
     try:
         flex_account = (
             BudgetAccount
@@ -58,6 +61,7 @@ def index(request):
     context = {
         'money_balance': money_balance,
         'budget_balance': budget_balance,
+        'investment_balance': investment_balance,
     }
 
     return render(request, 'pages/home.html', context)
