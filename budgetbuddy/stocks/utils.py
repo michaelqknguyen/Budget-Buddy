@@ -19,9 +19,12 @@ def calculate_investment_balance(shares: StockShares):
         return total_balance
 
     Stock.objects.update_market_prices()
-    total = shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))
+    total = shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))['total']
 
     # for share in shares:
     #     total_balance += float(share.num_shares) * float(share.stock.market_price)
 
-    return round(total['total'], 2)
+    if total is None:
+        return 0
+
+    return round(total, 2)

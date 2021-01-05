@@ -24,8 +24,10 @@ class Account(models.Model):
 
     @property
     def investment_sum(self):
-        total = self.shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))
-        return round(total['total'], 2)
+        total = self.shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))['total']
+        if total is None:
+            return 0
+        return round(total, 2)
 
     class Meta:
         abstract = True
