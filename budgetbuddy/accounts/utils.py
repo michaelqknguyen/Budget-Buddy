@@ -1,5 +1,8 @@
 import datetime
 import math
+
+from django.db import models
+from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
 
@@ -46,3 +49,10 @@ def get_transactions(user, active_account=None, account_type=None):
 def round_up(n, decimals=0):
     multiplier = 10 ** decimals
     return math.ceil(n * multiplier) / multiplier
+
+
+def ensure_user_access(model: models.Model, pk: int, user):
+    """ensure user has access to specified model"""
+    if model is None:
+        return None
+    return get_object_or_404(model, pk=pk, user=user)

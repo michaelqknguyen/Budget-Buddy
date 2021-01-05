@@ -18,6 +18,7 @@ urlpatterns = [
     # Your stuff: custom urls includes go here
     path("paychecks/", include("budgetbuddy.paychecks.urls", namespace="paychecks")),
     path("budget/", include("budgetbuddy.accounts.urls", namespace="budget")),
+    path("stocks/", include("budgetbuddy.stocks.urls", namespace="stocks")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

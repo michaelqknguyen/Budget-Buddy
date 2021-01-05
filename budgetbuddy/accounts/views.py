@@ -14,7 +14,10 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount, Transaction
 from budgetbuddy.accounts.forms import BudgetAccountForm, TransactionForm, MoneyAccountForm
-from budgetbuddy.accounts.utils import get_transactions, get_date_range
+from budgetbuddy.accounts.utils import get_transactions, get_date_range, ensure_user_access
+from budgetbuddy.stocks.forms import StockTransactionForm
+from budgetbuddy.stocks.models import StockTransaction
+from budgetbuddy.stocks.utils import get_stock_shares, calculate_investment_balance
 
 
 @login_required
@@ -121,6 +124,8 @@ def account_view(request, account_id, account_type):
 
     # get transactions for this account
     all_transactions = get_transactions(user, active_account, account_type)
+    all_stock_shares = get_stock_shares(user, active_account=active_account, account_type=account_type)
+    # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
     if account_id:
         balance = all_transactions.aggregate(
             balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
@@ -133,7 +138,9 @@ def account_view(request, account_id, account_type):
                 balance=Coalesce(Sum('amount_spent'), 0))
             .get('balance', 0)
         )
-    subset_transactions = all_transactions.filter(transaction_date__range=(start_date,end_date))
+    subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date))
+    # subset_stock_transactions = all_stock_transactions.filter(transaction_date__range=(start_date, end_date))
+    subset_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares, transaction_date__range=(start_date, end_date))
     # exclude paycheck contributions from the "spent" calculation
     subset_spent = (
         subset_transactions
@@ -161,9 +168,12 @@ def account_view(request, account_id, account_type):
         'budget_accounts': budget_accounts,
         'accounts': accounts,
         'transactions': subset_transactions,
+        'stock_shares': all_stock_shares,
+        'stock_transactions': subset_stock_transactions,
         'start_date': start_date,
         'end_date': end_date,
         'balance': balance,
+        'investment_balance': calculate_investment_balance(all_stock_shares),
         'time_frame_spent': subset_spent,
         'transaction_form': initial_transaction,
     }

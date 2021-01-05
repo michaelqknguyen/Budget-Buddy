@@ -81,6 +81,7 @@ LOCAL_APPS = [
     "budgetbuddy.paychecks.apps.PaychecksConfig",
     "budgetbuddy.accounts.apps.AccountsConfig",
     "budgetbuddy.pages.apps.PagesConfig",
+    "budgetbuddy.stocks.apps.StocksConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -262,6 +263,13 @@ ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_ADAPTER = "budgetbuddy.users.adapters.AccountAdapter"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 SOCIALACCOUNT_ADAPTER = "budgetbuddy.users.adapters.SocialAccountAdapter"
+
+
+# rapid-api yahoo finance
+# ------------------------------------------------------------------------------
+YAHOO_FINANCE_API_HOST = "apidojo-yahoo-finance-v1.p.rapidapi.com"
+RAPID_API_KEY = env("RAPID_API_KEY")
+YAHOO_FINANCE_QUOTES_URI = "https://{}/market/v2/get-quotes".format(YAHOO_FINANCE_API_HOST)
 
 
 # Your stuff...
