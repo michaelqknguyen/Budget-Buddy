@@ -3,6 +3,8 @@ from django.conf import settings
 from datetime import datetime
 from budgetbuddy.paychecks.models import Paystub, Paycheck
 
+from django.db.models import Sum, F
+
 
 class AccountType(models.Model):
     account_type = models.CharField(max_length=20)
@@ -19,6 +21,11 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def investment_sum(self):
+        total = self.shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))
+        return round(total['total'], 2)
 
     class Meta:
         abstract = True

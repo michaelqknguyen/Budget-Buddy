@@ -16,44 +16,23 @@ class Stock(models.Model):
     def __str__(self):
         return self.ticker
 
-    # @property
-    # def market_price(self):
-    #     return get_stock_price(self.ticker)
-
 
 class StockShares(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     stock = models.ForeignKey(Stock, on_delete=models.DO_NOTHING, related_name='shares')
     brokerage_account = models.ForeignKey(MoneyAccount, null=True, blank=True,
                                           on_delete=models.DO_NOTHING,
-                                          limit_choices_to={'is_brokerage': True})
+                                          limit_choices_to={'is_brokerage': True}, related_name='shares')
     budget_account = models.ForeignKey(BudgetAccount, null=True, blank=True,
-                                       on_delete=models.DO_NOTHING)
+                                       on_delete=models.DO_NOTHING, related_name='shares')
 
-    # objects = StockSharesManager()
+    objects = StockSharesManager()
 
     num_shares = models.DecimalField(max_digits=20, decimal_places=4, default=0)
 
     @property
     def shares_value(self):
         return self.num_shares * self.stock.market_price
-
-    # @property
-    # def num_shares_owned(self):
-    #     total_bought = self.transactions.filter(
-    #         transaction_type='B').aggregate(total=Sum('num_shares')).get('total') or 0
-    #     total_sold = self.transactions.filter(
-    #         transaction_type='S').aggregate(total=Sum('num_shares')).get('total') or 0
-    #     return total_bought - total_sold
-
-    # @property
-    # def num_shares_sold(self):
-    #     return self.transactions.filter(transaction_type='S').aggregate(total=Sum('num_shares')).get('total') or 0
-
-    # # return if more shares sold then bought -- something is wrong
-    # @property
-    # def more_shares_sold(self):
-    #     return (self.num_shares_sold - self.num_shares_owned) > 0
 
     def __str__(self):
         return '{}_{}_{}'.format(self.stock, self.brokerage_account, self.budget_account)
