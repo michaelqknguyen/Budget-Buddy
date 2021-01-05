@@ -1,7 +1,6 @@
 import copy
 import logging
 import re
-import json
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -25,7 +24,10 @@ def create_stock_transaction(request):
         brokerage_account_object = get_object_or_404(MoneyAccount, pk=money_account_id, user=request.user)
         budget_account_object = get_object_or_404(BudgetAccount, pk=budget_account_id, user=request.user)
         ticker = request.POST.get('ticker')
-        stock = Stock.objects.get_or_create(ticker=ticker)[0]
+        stock, was_created = Stock.objects.get_or_create(ticker=ticker)
+
+        if was_created:
+            Stock.objects.update_market_prices(update_interval=0)
 
         ensure_user_access(model=MoneyAccount, pk=money_account_id, user=request.user)
         ensure_user_access(model=BudgetAccount, pk=budget_account_id, user=request.user)
@@ -75,61 +77,6 @@ def create_stock_transaction(request):
         if money_or_budget == 'm':
             return account_page_reverse(money_or_budget, money_account_id)
         return account_page_reverse(money_or_budget, budget_account_id)  # handles budget and null
-
-
-@login_required
-def transfer_transaction(request):
-    if request.method == 'POST':
-        # account json format should have account_id and money_or_budget
-        from_account = json.loads(request.POST['fromAccount'])
-        to_account = json.loads(request.POST['toAccount'])
-        from_account_id = from_account['account_id']
-        to_account_id = to_account['account_id']
-
-        money_or_budget = request.POST.get('money_or_budget')
-        return_url = account_page_reverse(money_or_budget, from_account_id)
-
-        if from_account['money_or_budget'] != to_account['money_or_budget']:
-            messages.error(request, 'Transfers can only be made between two budget accounts or two money accounts')
-            return return_url
-        elif from_account['money_or_budget'] == 'm':
-            account_type = MoneyAccount
-        elif from_account['money_or_budget'] == 'b':
-            account_type = BudgetAccount
-
-        transaction_date = request.POST['transaction_date']
-        amount_transfer = float(request.POST['amount_spent'])
-
-        # initialize transaction for the from and to accounts
-        from_trans = Transaction(
-            notes="Transfer",
-            transaction_date=transaction_date,
-            amount_spent=-amount_transfer,
-            user=request.user,
-        )
-        to_trans = Transaction(
-            notes="Transfer",
-            transaction_date=transaction_date,
-            amount_spent=amount_transfer,
-            user=request.user,
-        )
-
-        from_account_object = get_object_or_404(account_type, pk=from_account_id, user=request.user)
-        to_account_object = get_object_or_404(account_type, pk=to_account_id, user=request.user)
-        from_trans.description = "To {}".format(to_account_object)
-        to_trans.description = "From {}".format(from_account_object)
-
-        if from_account['money_or_budget'] == 'm':
-            from_trans.money_account = from_account_object
-            to_trans.money_account = to_account_object
-        elif from_account['money_or_budget'] == 'b':
-            from_trans.budget_account = from_account_object
-            to_trans.budget_account = to_account_object
-
-        from_trans.save()
-        to_trans.save()
-        messages.success(request, 'Transferred ${:.2f} from {} to {}'.format(amount_transfer, from_account_object, to_account_object))
-        return return_url
 
 
 class StockTransactionUpdateView(LoginRequiredMixin, UpdateView):
