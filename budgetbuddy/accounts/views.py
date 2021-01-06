@@ -125,7 +125,7 @@ def account_view(request, account_id, account_type):
     # get transactions for this account
     all_transactions = get_transactions(user, active_account, account_type)
     all_stock_shares = get_stock_shares(user, active_account=active_account, account_type=account_type)
-    # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
+
     if account_id:
         balance = all_transactions.aggregate(
             balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
@@ -138,9 +138,8 @@ def account_view(request, account_id, account_type):
                 balance=Coalesce(Sum('amount_spent'), 0))
             .get('balance', 0)
         )
-    subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date))
-    # subset_stock_transactions = all_stock_transactions.filter(transaction_date__range=(start_date, end_date))
-    subset_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares, transaction_date__range=(start_date, end_date))
+    subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date)).order_by('-transaction_date')
+    subset_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares, transaction_date__range=(start_date, end_date)).order_by('-transaction_date')
     # exclude paycheck contributions from the "spent" calculation
     subset_spent = (
         subset_transactions
@@ -158,9 +157,6 @@ def account_view(request, account_id, account_type):
         initial_transaction['money_account'] = active_account
     elif account_type is BudgetAccount:
         initial_transaction['budget_account'] = active_account
-    # else:
-    #     money_or_budget = None
-    # transaction_form = TransactionForm(initial=initial_transaction)
 
     context = {
         'active_account': active_account,

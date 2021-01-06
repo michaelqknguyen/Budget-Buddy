@@ -8,6 +8,13 @@ from budgetbuddy.accounts.tests.factories import BudgetAccountFactory, Brokerage
 class StockFactory(DjangoModelFactory):
     ticker = Faker("bothify", text="????")
     asset_class = Faker("bothify", text="????????")
+    updated_at = Faker('date_between', start_date='-1y', end_date='today')
+    market_price = Faker(
+        'pydecimal',
+        min_value=1,
+        max_value=1000,
+        right_digits=2
+    )
 
     class Meta:
         model = Stock
@@ -18,6 +25,12 @@ class StockSharesFactory(DjangoModelFactory):
     stock = SubFactory(StockFactory)
     brokerage_account = SubFactory(BrokerageAccountFactory)
     budget_account = SubFactory(BudgetAccountFactory)
+    num_shares = Faker(
+        'pydecimal',
+        min_value=1,
+        max_value=1000,
+        right_digits=4
+    )
 
     class Meta:
         model = StockShares
