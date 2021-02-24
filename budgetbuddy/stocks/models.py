@@ -28,7 +28,7 @@ class StockShares(models.Model):
 
     objects = StockSharesManager()
 
-    num_shares = models.DecimalField(max_digits=20, decimal_places=4, default=0)
+    num_shares = models.DecimalField(max_digits=20, decimal_places=8, default=0)
 
     @property
     def shares_value(self):
@@ -50,7 +50,7 @@ class StockTransaction(models.Model):
     shares = models.ForeignKey(StockShares, on_delete=models.DO_NOTHING, related_name='transactions')
     transaction_date = models.DateField()
     transaction_type = models.CharField(max_length=2, choices=TRANSACTION_CHOICES)
-    num_shares = models.DecimalField(max_digits=20, decimal_places=4)
+    num_shares = models.DecimalField(max_digits=20, decimal_places=8)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
     @property
