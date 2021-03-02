@@ -68,7 +68,12 @@
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
               <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Investment Balance</div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">${{ investment_balance | intcomma }}</div>
+              <div class="h5 mb-0 font-weight-bold 
+                  {% if stock_gains >= 0 %}
+                  text-success
+                  {% else %}
+                  text-danger
+                  {% endif %}">${{ investment_balance | intcomma }} (${{ stock_gains | intcomma }})</div>
             </div>
             <div class="col-auto">
               <i class="fas fa-comments fa-2x text-gray-300"></i>
@@ -389,7 +394,7 @@
     </div>
   </div>
   <!-- Card Table - Stock Shares -->
-  {% if active_account.is_brokerage or stock_transactions %}
+  {% if active_account.is_brokerage or stock_transactions or investment_balance %}
   <div class="card shadow mb-4">
     <!-- Card Header -->
     <div class="d-block card-header py-3" >
