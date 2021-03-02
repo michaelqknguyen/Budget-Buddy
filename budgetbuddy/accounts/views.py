@@ -162,6 +162,31 @@ def account_view(request, account_id, account_type):
     #     money_or_budget = None
     # transaction_form = TransactionForm(initial=initial_transaction)
 
+    # calculate all the money spent or made selling or buying stock
+    # these are the "realized gains"
+    stock_realized = (
+        all_transactions
+        .filter(
+            (
+                Q(description__contains='shares')
+                & (
+                    Q(description__contains='Buy') |
+                    Q(description__contains='Sell')
+                )
+            )
+            | Q(description__contains='BTO')
+            | Q(description__contains='STO')
+            | Q(description__contains='BTC')
+            | Q(description__contains='STC')
+        )
+        .aggregate(
+            spent=Coalesce(Sum('amount_spent'), 0))
+        .get('spent', 0)
+    )
+    # get the current investment balance minus the amount spent on stocks thus far
+    investment_balance = calculate_investment_balance(all_stock_shares)
+    potential_gain = stock_realized + investment_balance
+
     context = {
         'active_account': active_account,
         'money_accounts': money_accounts,
@@ -176,6 +201,7 @@ def account_view(request, account_id, account_type):
         'investment_balance': calculate_investment_balance(all_stock_shares),
         'time_frame_spent': subset_spent,
         'transaction_form': initial_transaction,
+        'stock_gains': potential_gain,
     }
     return render(request, 'accounts/account.html', context)
 
