@@ -44,7 +44,6 @@ def index(request):
             active__in=(True, money_active),
             user=user
         )
-        .select_related('account_type')
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
         .order_by('name')
     )
@@ -125,7 +124,6 @@ def account_view(request, account_id, account_type):
 
     # get transactions for this account
     all_transactions = get_transactions(user, active_account, account_type)
-    all_transactions = all_transactions.prefetch_related('money_account', 'budget_account')
     all_stock_shares = get_stock_shares(user, active_account=active_account, account_type=account_type)
     all_stock_shares = all_stock_shares.prefetch_related('brokerage_account', 'budget_account')
     # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
