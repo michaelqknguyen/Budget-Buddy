@@ -127,6 +127,7 @@ def account_view(request, account_id, account_type):
     all_transactions = get_transactions(user, active_account, account_type)
     all_transactions = all_transactions.prefetch_related('money_account', 'budget_account')
     all_stock_shares = get_stock_shares(user, active_account=active_account, account_type=account_type)
+    all_stock_shares = all_stock_shares.prefetch_related('brokerage_account', 'budget_account')
     # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
     if account_id:
         balance = all_transactions.aggregate(
@@ -142,7 +143,12 @@ def account_view(request, account_id, account_type):
         )
     subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date))
     # subset_stock_transactions = all_stock_transactions.filter(transaction_date__range=(start_date, end_date))
-    subset_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares, transaction_date__range=(start_date, end_date)).prefetch_related('money_account', 'budget_account')
+    subset_stock_transactions = (
+        StockTransaction
+        .objects
+        .filter(shares__in=all_stock_shares, transaction_date__range=(start_date, end_date))
+        .select_related('shares')
+    )
     # exclude paycheck contributions from the "spent" calculation
     subset_spent = (
         subset_transactions
