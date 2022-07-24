@@ -62,6 +62,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
+    "collectfast",
     "django.contrib.staticfiles",
     "django.contrib.humanize",  # Handy template tags
     "django.contrib.admin",
@@ -152,6 +153,7 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
+COLLECTFAST_STRATEGY = 'collectfast.strategies.filesystem.FileSystemStrategy'
 
 # MEDIA
 # ------------------------------------------------------------------------------
