@@ -32,13 +32,16 @@ class MoneyAccountForm(forms.ModelForm):
 
 
 class TransactionForm(forms.ModelForm):
+    money_account = forms.ModelChoiceField(queryset=MoneyAccount.objects.order_by('name'))
+    budget_account = forms.ModelChoiceField(queryset=BudgetAccount.objects.order_by('name'))
+
     class Meta:
         model = Transaction
         fields = ('transaction_date', 'description', 'amount_spent',
                   'money_account', 'budget_account', 'user')
         widgets = {
             'user': forms.HiddenInput(),
-            'transaction_date': forms.DateInput(attrs={'class': 'datepicker'})
+            'transaction_date': forms.DateInput(attrs={'class': 'datepicker', 'type': 'date'})
         }
 
     def __init__(self, *args, **kwargs):

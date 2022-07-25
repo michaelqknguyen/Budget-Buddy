@@ -3,6 +3,7 @@ import re
 import datetime
 import json
 from itertools import chain
+from decimal import Decimal
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
@@ -44,7 +45,7 @@ def index(request):
             active__in=(True, money_active),
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
         .order_by('name')
     )
     # redirect to moeny account creation if no money account
@@ -55,7 +56,7 @@ def index(request):
         flex_account = (
             BudgetAccount
             .objects
-            .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
             .get(
                 Q(account_type__account_type='Flex'),
                 user=user,
@@ -71,7 +72,7 @@ def index(request):
             active__in=(True, budget_active),
             user=user)
         .exclude(Q(account_type__account_type='Flex'))
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
         .order_by('name')
     )
 
@@ -129,14 +130,14 @@ def account_view(request, account_id, account_type):
     # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
     if account_id:
         balance = all_transactions.aggregate(
-            balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
+            balance=Coalesce(Sum('amount_spent'), Decimal(0))).get('balance', Decimal(0))
     else:
         # only consider actual money account balances for balance calc for all account view
         balance = (
             all_transactions
             .filter(money_account__isnull=False)
             .aggregate(
-                balance=Coalesce(Sum('amount_spent'), 0))
+                balance=Coalesce(Sum('amount_spent'), Decimal(0)))
             .get('balance', 0)
         )
     subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date))
@@ -152,7 +153,7 @@ def account_view(request, account_id, account_type):
         subset_transactions
         .filter(paystub__isnull=True)
         .aggregate(
-            spent=Coalesce(Sum('amount_spent'), 0))
+            spent=Coalesce(Sum('amount_spent'), Decimal(0)))
         .get('spent', 0)
     )
 
@@ -186,7 +187,7 @@ def account_view(request, account_id, account_type):
             | Q(description__contains='STC')
         )
         .aggregate(
-            spent=Coalesce(Sum('amount_spent'), 0))
+            spent=Coalesce(Sum('amount_spent'), Decimal(0)))
         .get('spent', 0)
     )
     # get the current investment balance minus the amount spent on stocks thus far

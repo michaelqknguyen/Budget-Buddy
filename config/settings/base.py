@@ -71,7 +71,7 @@ THIRD_PARTY_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "rest_framework",
+    # "rest_framework",
     # "formset-bootstrap",
 ]
 
@@ -152,6 +152,7 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
+COLLECTFAST_STRATEGY = 'collectfast.strategies.filesystem.FileSystemStrategy'
 
 # MEDIA
 # ------------------------------------------------------------------------------
