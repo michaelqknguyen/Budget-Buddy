@@ -41,7 +41,7 @@ class TransactionForm(forms.ModelForm):
                   'money_account', 'budget_account', 'user')
         widgets = {
             'user': forms.HiddenInput(),
-            'transaction_date': forms.DateInput(attrs={'class': 'datepicker'})
+            'transaction_date': forms.DateInput(attrs={'class': 'datepicker', 'type': 'date'})
         }
 
     def __init__(self, *args, **kwargs):
