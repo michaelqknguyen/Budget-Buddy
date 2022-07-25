@@ -34,7 +34,7 @@ def index(request):
             active=True,
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
         .aggregate(balance_total=Coalesce(Sum('total'), Decimal(0)))
     ).get('balance_total')
 
