@@ -130,14 +130,14 @@ def account_view(request, account_id, account_type):
     # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
     if account_id:
         balance = all_transactions.aggregate(
-            balance=Coalesce(Sum('amount_spent'), 0)).get('balance', 0)
+            balance=Coalesce(Sum('amount_spent'), Decimal(0))).get('balance', Decimal(0))
     else:
         # only consider actual money account balances for balance calc for all account view
         balance = (
             all_transactions
             .filter(money_account__isnull=False)
             .aggregate(
-                balance=Coalesce(Sum('amount_spent'), 0))
+                balance=Coalesce(Sum('amount_spent'), Decimal(0)))
             .get('balance', 0)
         )
     subset_transactions = all_transactions.filter(transaction_date__range=(start_date, end_date))
@@ -153,7 +153,7 @@ def account_view(request, account_id, account_type):
         subset_transactions
         .filter(paystub__isnull=True)
         .aggregate(
-            spent=Coalesce(Sum('amount_spent'), 0))
+            spent=Coalesce(Sum('amount_spent'), Decimal(0)))
         .get('spent', 0)
     )
 
@@ -187,7 +187,7 @@ def account_view(request, account_id, account_type):
             | Q(description__contains='STC')
         )
         .aggregate(
-            spent=Coalesce(Sum('amount_spent'), 0))
+            spent=Coalesce(Sum('amount_spent'), Decimal(0)))
         .get('spent', 0)
     )
     # get the current investment balance minus the amount spent on stocks thus far
