@@ -32,6 +32,9 @@ class MoneyAccountForm(forms.ModelForm):
 
 
 class TransactionForm(forms.ModelForm):
+    money_account = forms.ModelChoiceField(queryset=MoneyAccount.objects.order_by('name'))
+    budget_account = forms.ModelChoiceField(queryset=BudgetAccount.objects.order_by('name'))
+
     class Meta:
         model = Transaction
         fields = ('transaction_date', 'description', 'amount_spent',
