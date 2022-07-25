@@ -3,6 +3,7 @@ import re
 import datetime
 import json
 from itertools import chain
+from decimal import Decimal
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
@@ -44,7 +45,7 @@ def index(request):
             active__in=(True, money_active),
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
         .order_by('name')
     )
     # redirect to moeny account creation if no money account
@@ -55,7 +56,7 @@ def index(request):
         flex_account = (
             BudgetAccount
             .objects
-            .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), 0))
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
             .get(
                 Q(account_type__account_type='Flex'),
                 user=user,
@@ -71,7 +72,7 @@ def index(request):
             active__in=(True, budget_active),
             user=user)
         .exclude(Q(account_type__account_type='Flex'))
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
         .order_by('name')
     )
 

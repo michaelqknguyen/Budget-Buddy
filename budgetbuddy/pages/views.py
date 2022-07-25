@@ -22,8 +22,8 @@ def index(request):
             active=True,
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), 0))
-        .aggregate(money_total=Coalesce(Sum('total', output_field=DecimalField()), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
+        .aggregate(money_total=Coalesce(Sum('total', output_field=DecimalField()), Decimal(0)))
     ).get('money_total')
 
     budget_balance = (
@@ -33,8 +33,8 @@ def index(request):
             active=True,
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), 0))
-        .aggregate(balance_total=Coalesce(Sum('total', output_field=DecimalField()), 0))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
+        .aggregate(balance_total=Coalesce(Sum('total', output_field=DecimalField()), Decimal(0)))
     ).get('balance_total')
 
     investment_balance = StockShares.objects.investment_sum(user)
@@ -43,7 +43,7 @@ def index(request):
         flex_account = (
             BudgetAccount
             .objects
-            .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), 0))
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
             .get(
                 Q(account_type__account_type='Flex'),
                 user=user,
