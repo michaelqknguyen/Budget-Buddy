@@ -165,7 +165,7 @@ def add_paystub(request, paycheck_id):
     # initialize paycheck gross
     deductions_list = Deduction.objects.filter(paycheck=paycheck, active=True, user=user)
     paycheck_gross = round(paycheck.annual_salary/paycheck.paychecks_per_year, 2)
-    deduction_total = deductions_list.aggregate(total=Coalesce(Sum('amount'), 0)).get('total')
+    deduction_total = deductions_list.aggregate(total=Coalesce(Sum('amount'), Decimal(0))).get('total')
 
     paystub_form = PaystubForm(initial={
         'paycheck': paycheck_id,

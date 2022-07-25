@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, F, Q, DecimalField
+from django.db.models import Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount
@@ -23,8 +23,8 @@ def index(request):
             active=True,
             user=user
         )
-        .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
-        .aggregate(money_total=Coalesce(Sum('total', output_field=DecimalField()), Decimal(0)))
+        .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
+        .aggregate(money_total=Coalesce(Sum('total'), Decimal(0)))
     ).get('money_total')
 
     budget_balance = (
@@ -35,7 +35,7 @@ def index(request):
             user=user
         )
         .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
-        .aggregate(balance_total=Coalesce(Sum('total', output_field=DecimalField()), Decimal(0)))
+        .aggregate(balance_total=Coalesce(Sum('total'), Decimal(0)))
     ).get('balance_total')
 
     investment_balance = StockShares.objects.investment_sum(user)
@@ -44,7 +44,7 @@ def index(request):
         flex_account = (
             BudgetAccount
             .objects
-            .annotate(total=Coalesce(Sum(F('transaction__amount_spent'), output_field=DecimalField()), Decimal(0)))
+            .annotate(total=Coalesce(Sum(F('transaction__amount_spent')), Decimal(0)))
             .get(
                 Q(account_type__account_type='Flex'),
                 user=user,
