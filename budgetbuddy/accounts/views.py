@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, F, Q
+from django.db.models import Sum, F, Q, DecimalField
 from django.db.models.functions import Coalesce
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse

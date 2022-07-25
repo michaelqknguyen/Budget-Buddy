@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib import messages
