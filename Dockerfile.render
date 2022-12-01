@@ -17,8 +17,25 @@ FROM ghcr.io/renderinc/heroku-app-builder:${HEROKU_STACK} AS builder
 # use case.
 
 # ARG MY_BUILD_TIME_ENV_VAR
-# ARG DATABASE_URL
+ARG DATABASE_URL
 ARG RAPID_API_KEY
+ARG DEBUG_COLLECTSTATIC
+ARG DISABLE_COLLECTSTATIC
+ARG DJANGO_ADMIN_URL
+ARG DJANGO_ALLOWED_HOSTS
+ARG DJANGO_DEBUG
+ARG DJANGO_SECRET_KEY
+ARG DJANGO_SETTINGS_MODULE
+ARG PAPERTRAIL_API_TOKEN
+ARG PYTHONHASHSEED
+ARG REDIS_URL
+ARG SENDGRID_API_KEY
+ARG SENDGRID_DOMAIN
+ARG SENDGRID_PASSWORD
+ARG SENDGRID_USERNAME
+ARG SENTRY_DSN
+ARG SENTRY_STAGE
+ARG WEB_CONCURRENCY
 
 # The FROM statement above refers to an image with the base buildpacks already
 # in place. We then run the apply-buildpacks.py script here because, unlike our
@@ -56,4 +73,5 @@ ENTRYPOINT [ "/render/setup-env" ]
 # You may override the process type that is run by replacing 'web' with another
 # process type name in the CMD line below. That process type must have been
 # defined in the app's Procfile during build.
+CMD [ "/render/process/release" ]
 CMD [ "/render/process/web" ]

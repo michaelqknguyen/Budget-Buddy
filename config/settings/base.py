@@ -3,7 +3,6 @@ Base settings to build other settings files upon.
 """
 
 import environ
-import os
 
 ROOT_DIR = (
     environ.Path(__file__) - 3
@@ -270,7 +269,6 @@ SOCIALACCOUNT_ADAPTER = "budgetbuddy.users.adapters.SocialAccountAdapter"
 # rapid-api yahoo finance
 # ------------------------------------------------------------------------------
 YAHOO_FINANCE_API_HOST = "apidojo-yahoo-finance-v1.p.rapidapi.com"
-print(os.environ)
 RAPID_API_KEY = env("RAPID_API_KEY")
 YAHOO_FINANCE_QUOTES_URI = "https://{}/market/v2/get-quotes".format(YAHOO_FINANCE_API_HOST)
 
