@@ -42,4 +42,5 @@ services:
 
 databases: # Render PostgreSQL database
   - name: postgresql-rectangular-67481
+    plan: free
     ipAllowList: [] # only allow internal connections
