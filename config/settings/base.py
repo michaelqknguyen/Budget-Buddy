@@ -17,8 +17,6 @@ if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(ROOT_DIR.path(".env")))
 
-print(env)
-
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -272,7 +270,8 @@ SOCIALACCOUNT_ADAPTER = "budgetbuddy.users.adapters.SocialAccountAdapter"
 # rapid-api yahoo finance
 # ------------------------------------------------------------------------------
 YAHOO_FINANCE_API_HOST = "apidojo-yahoo-finance-v1.p.rapidapi.com"
-RAPID_API_KEY = os.environ.get("RAPID_API_KEY")
+print(os.environ)
+RAPID_API_KEY = env("RAPID_API_KEY")
 YAHOO_FINANCE_QUOTES_URI = "https://{}/market/v2/get-quotes".format(YAHOO_FINANCE_API_HOST)
 
 
