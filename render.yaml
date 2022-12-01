@@ -8,8 +8,8 @@ services:
     dockerfilePath: Dockerfile.render
     plan: free # optional; defaults to starter
     numInstances: 1
-    domains: # custom domains
-      - 'staging.planetexpress.club'
+    # domains: # custom domains
+      # - 'staging.planetexpress.club'
     envVars:
       - key: DEBUG_COLLECTSTATIC # Imported from Heroku app
         value: 1
