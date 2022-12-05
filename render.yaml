@@ -17,7 +17,7 @@ services:
       - key: DJANGO_ACCOUNT_ALLOW_REGISTRATION # Imported from Heroku app
         value: False
       - key: DJANGO_ALLOWED_HOSTS # Imported from Heroku app
-        value: budgetbuddy-ky.herokuapp.com,budgetbuddy.planetexpress.club,www.planetexpress.club,planetexpress.club
+        value: budgetbuddy-ky.onrender.com,budgetbuddy.planetexpress.club,www.planetexpress.club,planetexpress.club
       - key: DJANGO_AWS_STORAGE_BUCKET_NAME # Imported from Heroku app
         value: 
       - key: DJANGO_DEBUG # Imported from Heroku app
