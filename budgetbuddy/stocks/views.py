@@ -47,7 +47,8 @@ def create_stock_transaction(request):
             # Create monetary transaction for stock transaction
             num_shares = request.POST.get('num_shares')
             transaction_str = "{} {} shares".format(num_shares, ticker)
-            transaction_amount = float(num_shares) * float(request.POST.get('price'))
+            transaction_amount = round(
+                float(num_shares) * float(request.POST.get('price')), 2)
             if request.POST.get('transaction_type') == 'B':
                 # spending money if a purchase
                 transaction_str = 'Buy ' + transaction_str
