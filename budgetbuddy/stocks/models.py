@@ -51,7 +51,7 @@ class StockTransaction(models.Model):
     transaction_date = models.DateField()
     transaction_type = models.CharField(max_length=2, choices=TRANSACTION_CHOICES)
     num_shares = models.DecimalField(max_digits=20, decimal_places=8)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=4)
 
     @property
     def transactional_value(self):
