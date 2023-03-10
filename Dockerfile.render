@@ -75,4 +75,4 @@ ENTRYPOINT [ "/render/setup-env" ]
 # defined in the app's Procfile during build.
 # RUN [ "/render/process/release" ]
 # overwrite the Docker Command on Render settings to run release when migration required.
-CMD [ "/render/process/web" ]
+CMD [ "/render/process/release ; /render/process/web" ]
