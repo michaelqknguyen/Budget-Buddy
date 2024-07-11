@@ -44,7 +44,10 @@ class StockManager(models.Manager):
         market_prices = get_stock_prices(tickers)
 
         for stock in stocks_to_update:
-            stock.market_price = market_prices[stock.ticker]
+            try:  # sometimes a stock gets delisted
+                stock.market_price = market_prices[stock.ticker]
+            except KeyError:
+                stock.market_price = 0
             stock.save()
 
 
