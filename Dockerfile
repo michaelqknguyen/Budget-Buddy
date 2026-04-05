@@ -92,7 +92,7 @@ echo "PostgreSQL is available"\n\
 exec "$@"\n' > /entrypoint \
   && chmod +x /entrypoint
 
-# Start script: collectstatic + migrate + gunicorn
+# Start script: migrate + collectstatic + gunicorn
 # Render sets PORT env var; default to 5000 for local
 RUN printf '#!/bin/bash\n\
 set -o errexit\n\
