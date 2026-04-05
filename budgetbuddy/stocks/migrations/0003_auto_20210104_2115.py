@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('stocks', '0002_stockshares_num_shares'),
+        ("stocks", "0002_stockshares_num_shares"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='stock',
-            name='market_price',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=20, null=True),
+            model_name="stock",
+            name="market_price",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=20, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='stock',
-            name='updated_at',
+            model_name="stock",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

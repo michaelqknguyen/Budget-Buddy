@@ -3,5 +3,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class StocksConfig(AppConfig):
-    name = 'budgetbuddy.stocks'
-    verbose_name = _('Stocks')
+    name = "budgetbuddy.stocks"
+    verbose_name = _("Stocks")
+    default_auto_field = "django.db.models.BigAutoField"

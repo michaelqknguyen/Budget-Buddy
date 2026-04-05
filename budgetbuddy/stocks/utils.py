@@ -1,7 +1,7 @@
+from django.db.models import F, Sum
+
 from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount
 from budgetbuddy.stocks.models import Stock, StockShares
-
-from django.db.models import Sum, F
 
 
 def get_stock_shares(user, stock=None, active_account=None, account_type=None):
@@ -19,7 +19,9 @@ def calculate_investment_balance(shares: StockShares):
         return total_balance
 
     Stock.objects.update_market_prices()
-    total = shares.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))['total']
+    total = shares.aggregate(total=Sum(F("num_shares") * F("stock__market_price")))[  # type: ignore[attr-defined]
+        "total"
+    ]
 
     # for share in shares:
     #     total_balance += float(share.num_shares) * float(share.stock.market_price)

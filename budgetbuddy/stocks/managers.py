@@ -1,26 +1,51 @@
-import requests
-from datetime import datetime, timedelta
+import logging
+from datetime import timedelta
+from decimal import Decimal
 
-from django.conf import settings
+import requests  # type: ignore[import-untyped]
+
 from django.db import models
-from django.db.models import Sum, F
+from django.db.models import F, Q, Sum
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
+
+YAHOO_CHART_URL = "https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
+YAHOO_HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def get_stock_prices(tickers):
-    ticker_string = ','.join(list(tickers))
-    querystring = {"region": "US", "symbols": ticker_string}
-    headers = {
-        'x-rapidapi-key': settings.RAPID_API_KEY,
-        'x-rapidapi-host': settings.YAHOO_FINANCE_API_HOST
-    }
-    response = requests.request("GET", settings.YAHOO_FINANCE_QUOTES_URI, headers=headers, params=querystring)
+    """Fetch current prices for a list of tickers via Yahoo Finance chart API.
 
-    body = response.json()
+    Makes one lightweight HTTP request per ticker. Returns a dict of
+    {ticker: price} with 0 for any ticker that fails.
+    """
+    prices: dict[str, float] = {t: 0.0 for t in tickers}
+    if not tickers:
+        return prices
 
-    prices = dict()
-
-    for quote in body.get('quoteResponse', {}).get('result', []):
-        prices[quote.get('symbol')] = quote.get('regularMarketPrice')
+    for ticker in tickers:
+        try:
+            resp = requests.get(
+                YAHOO_CHART_URL.format(ticker=ticker),
+                headers=YAHOO_HEADERS,
+                params={"range": "1d", "interval": "1d"},
+                timeout=10,
+            )
+            if resp.status_code == 429:
+                logger.warning("Yahoo Finance rate limited, stopping batch")
+                break
+            resp.raise_for_status()
+            data = resp.json()
+            result = data.get("chart", {}).get("result")
+            if result:
+                price = result[0].get("meta", {}).get("regularMarketPrice")
+                if price is not None:
+                    prices[ticker] = float(price)
+        except requests.RequestException:
+            logger.exception("Failed to fetch price for %s", ticker)
+        except (KeyError, IndexError, ValueError):
+            logger.debug("Unexpected response structure for %s", ticker)
 
     return prices
 
@@ -28,45 +53,64 @@ def get_stock_prices(tickers):
 class StockManager(models.Manager):
 
     def update_market_prices(self, update_interval=900):
-        """Update market prices for all shares at a specified interval
-        If the stock model hasn't been updated in the specified interval, pull data from API
+        """Update market prices for shares at a specified interval.
+        If the stock model hasn't been updated in the specified interval,
+        pull data from Yahoo Finance.
 
-        default is 15 minutes
+        Also updates any stock that has never had a price fetched (market_price=0).
+
+        Default interval is 15 minutes.
         """
-        interval_start = datetime.now() - timedelta(seconds=update_interval)
-        stocks_to_update = super().get_queryset().filter(updated_at__lte=interval_start)
-        tickers = list(stocks_to_update.values_list('ticker', flat=True))
+        interval_start = timezone.now() - timedelta(seconds=update_interval)
+        stocks_to_update = (
+            super()
+            .get_queryset()
+            .filter(Q(updated_at__lte=interval_start) | Q(market_price=Decimal("0")))
+        )
+        tickers = list(stocks_to_update.values_list("ticker", flat=True))
 
         if not tickers:
-            # none to update -- exit
             return
 
         market_prices = get_stock_prices(tickers)
 
         for stock in stocks_to_update:
-            try:  # sometimes a stock gets delisted
-                stock.market_price = market_prices[stock.ticker]
-            except KeyError:
-                stock.market_price = 0
-            stock.save()
+            price = market_prices.get(stock.ticker, 0)
+            if price > 0:
+                stock.market_price = price
+                stock.save()
 
 
 class StockSharesManager(models.Manager):
 
-    def find_all_shares(self, user, stock=None, brokerage_account=None, budget_account=None):
-        """find all shares in all accounts for a ticker"""
-        query_args = {'user': user, 'stock': stock, 'brokerage_account': brokerage_account, 'budget_account': budget_account}
-        # don't include the args if the value is none
+    def find_all_shares(
+        self, stock, user=None, brokerage_account=None, budget_account=None
+    ):
+        """Find all shares in all accounts for a ticker."""
+        query_args = {
+            "stock": stock,
+            "user": user,
+            "brokerage_account": brokerage_account,
+            "budget_account": budget_account,
+        }
         final_query_args = {k: v for k, v in query_args.items() if v is not None}
         return super().get_queryset().filter(**final_query_args)
 
-    def investment_sum(self, user=None, stock=None, brokerage_account=None, budget_account=None):
-        """find sum of shares in accounts"""
-        query_args = {'user': user, 'stock': stock, 'brokerage_account': brokerage_account, 'budget_account': budget_account}
-        # don't include the args if the value is none
+    def investment_sum(
+        self, user=None, stock=None, brokerage_account=None, budget_account=None
+    ):
+        """Find sum of shares in accounts."""
+        query_args = {
+            "user": user,
+            "stock": stock,
+            "brokerage_account": brokerage_account,
+            "budget_account": budget_account,
+        }
         final_query_args = {k: v for k, v in query_args.items() if v is not None}
         queryset = super().get_queryset().filter(**final_query_args)
-        total = queryset.aggregate(total=Sum(F('num_shares') * F('stock__market_price')))['total']
+        total = queryset.aggregate(
+            total=Sum(F("num_shares") * F("stock__market_price"))
+        )["total"]
 
         if total is None:
             return 0

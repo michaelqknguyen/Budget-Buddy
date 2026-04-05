@@ -7,19 +7,24 @@ from .base import env
 
 # GENERAL
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#debug
 DEBUG = False
-# https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 SECRET_KEY = env(
     "DJANGO_SECRET_KEY",
     default="8Nz4JqD84j5nFRNSY6DTYcRpZehpqmECHSc0Lp6ysRQxZ0cEVxqamHOrpUL3D12s",
 )
-# https://docs.djangoproject.com/en/dev/ref/settings/#test-runner
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
+
+# DATABASES
+# ------------------------------------------------------------------------------
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+    }
+}
 
 # CACHES
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#caches
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -29,12 +34,11 @@ CACHES = {
 
 # PASSWORDS
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#password-hashers
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # TEMPLATES
 # ------------------------------------------------------------------------------
-TEMPLATES[0]["OPTIONS"]["loaders"] = [  # noqa F405
+TEMPLATES[0]["OPTIONS"]["loaders"] = [  # type: ignore[index]  # noqa F405
     (
         "django.template.loaders.cached.Loader",
         [
@@ -46,12 +50,7 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [  # noqa F405
 
 # EMAIL
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-# https://docs.djangoproject.com/en/dev/ref/settings/#email-host
-EMAIL_HOST = "localhost"
-# https://docs.djangoproject.com/en/dev/ref/settings/#email-port
-EMAIL_PORT = 1025
 
 # Your stuff...
 # ------------------------------------------------------------------------------

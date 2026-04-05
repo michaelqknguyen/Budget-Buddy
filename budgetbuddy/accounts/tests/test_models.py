@@ -1,6 +1,12 @@
 import pytest
+
 from django.test import TestCase
-from budgetbuddy.accounts.tests.factories import MoneyAccountFactory, BudgetAccountFactory, TransactionFactory, MoneyAccountTypeFactory
+
+from budgetbuddy.accounts.tests.factories import (
+    BudgetAccountFactory,
+    MoneyAccountFactory,
+    MoneyAccountTypeFactory,
+)
 from budgetbuddy.accounts.utils import round_up
 
 pytestmark = pytest.mark.django_db
@@ -20,7 +26,7 @@ class MoneyAccountModelTest(TestCase):
         self.assertEqual(str(self.money_account), self.money_account.name)
 
     def test_money_or_budget_property(self):
-        self.assertEqual(self.money_account.money_or_budget, 'm')
+        self.assertEqual(self.money_account.money_or_budget, "m")
 
 
 class BudgetAccountModelTest(TestCase):
@@ -31,18 +37,27 @@ class BudgetAccountModelTest(TestCase):
         self.assertEqual(str(self.budget_account), self.budget_account.name)
 
     def test_money_or_budget_property(self):
-        self.assertEqual(self.budget_account.money_or_budget, 'b')
+        self.assertEqual(self.budget_account.money_or_budget, "b")
 
     def test_monthly_contribution_property(self):
         self.assertEqual(
             round_up(self.budget_account.monthly_contribution, 5),
-            round_up(self.budget_account.contribution_amount/self.budget_account.month_intervals, 5)
+            round_up(
+                self.budget_account.contribution_amount
+                / self.budget_account.month_intervals,
+                5,
+            ),
         )
 
     def test_annual_contribution_property(self):
         self.assertEqual(
             round_up(self.budget_account.annual_contribution, 5),
-            round_up(12*self.budget_account.contribution_amount/self.budget_account.month_intervals, 5)
+            round_up(
+                12
+                * self.budget_account.contribution_amount
+                / self.budget_account.month_intervals,
+                5,
+            ),
         )
 
 

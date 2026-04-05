@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Sum
 
-from budgetbuddy.accounts.models import MoneyAccount, BudgetAccount
+from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount
 from budgetbuddy.stocks.managers import StockManager, StockSharesManager
 
 
@@ -9,7 +10,9 @@ class Stock(models.Model):
     ticker = models.CharField(max_length=8, primary_key=True)
     asset_class = models.CharField(max_length=200, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
-    market_price = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    market_price = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True
+    )
 
     objects = StockManager()
 
@@ -19,12 +22,22 @@ class Stock(models.Model):
 
 class StockShares(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    stock = models.ForeignKey(Stock, on_delete=models.DO_NOTHING, related_name='shares')
-    brokerage_account = models.ForeignKey(MoneyAccount, null=True, blank=True,
-                                          on_delete=models.DO_NOTHING,
-                                          limit_choices_to={'is_brokerage': True}, related_name='shares')
-    budget_account = models.ForeignKey(BudgetAccount, null=True, blank=True,
-                                       on_delete=models.DO_NOTHING, related_name='shares')
+    stock = models.ForeignKey(Stock, on_delete=models.DO_NOTHING, related_name="shares")
+    brokerage_account = models.ForeignKey(
+        MoneyAccount,
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        limit_choices_to={"is_brokerage": True},
+        related_name="shares",
+    )
+    budget_account = models.ForeignKey(
+        BudgetAccount,
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        related_name="shares",
+    )
 
     objects = StockSharesManager()
 
@@ -34,20 +47,53 @@ class StockShares(models.Model):
     def shares_value(self):
         return self.num_shares * self.stock.market_price
 
+    @property
+    def num_shares_owned(self):
+        total_bought = (
+            self.transactions.filter(transaction_type="B")  # type: ignore[attr-defined]
+            .aggregate(total=Sum("num_shares"))
+            .get("total")
+            or 0
+        )
+        total_sold = (
+            self.transactions.filter(transaction_type="S")  # type: ignore[attr-defined]
+            .aggregate(total=Sum("num_shares"))
+            .get("total")
+            or 0
+        )
+        return total_bought - total_sold
+
+    @property
+    def num_shares_sold(self):
+        return (
+            self.transactions.filter(transaction_type="S")  # type: ignore[attr-defined]
+            .aggregate(total=Sum("num_shares"))
+            .get("total")
+            or 0
+        )
+
+    @property
+    def more_shares_sold(self):
+        return (self.num_shares_sold - self.num_shares_owned) > 0
+
     def __str__(self):
-        return '{}_{}_{}'.format(self.stock, self.brokerage_account, self.budget_account)
+        return "{}_{}_{}".format(
+            self.stock, self.brokerage_account, self.budget_account
+        )
 
 
 class StockTransaction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
-    BUY = 'B'
-    SELL = 'S'
+    BUY = "B"
+    SELL = "S"
     TRANSACTION_CHOICES = [
-        (BUY, 'Buy'),
-        (SELL, 'Sell'),
+        (BUY, "Buy"),
+        (SELL, "Sell"),
     ]
 
-    shares = models.ForeignKey(StockShares, on_delete=models.DO_NOTHING, related_name='transactions')
+    shares = models.ForeignKey(
+        StockShares, on_delete=models.DO_NOTHING, related_name="transactions"
+    )
     transaction_date = models.DateField()
     transaction_type = models.CharField(max_length=2, choices=TRANSACTION_CHOICES)
     num_shares = models.DecimalField(max_digits=20, decimal_places=8)

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0010_assigned_budget_paycheck'),
+        ("accounts", "0010_assigned_budget_paycheck"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='budgetaccount',
-            name='assigned_paycheck',
-            field=models.ManyToManyField(blank=True, to='paychecks.Paycheck'),
+            model_name="budgetaccount",
+            name="assigned_paycheck",
+            field=models.ManyToManyField(blank=True, to="paychecks.Paycheck"),
         ),
     ]

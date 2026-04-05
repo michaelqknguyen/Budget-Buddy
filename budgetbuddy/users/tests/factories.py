@@ -1,8 +1,10 @@
 from typing import Any, Sequence
 
-from django.contrib.auth import get_user_model
+import faker
 from factory import Faker, post_generation
 from factory.django import DjangoModelFactory
+
+from django.contrib.auth import get_user_model
 
 
 class UserFactory(DjangoModelFactory):
@@ -13,14 +15,17 @@ class UserFactory(DjangoModelFactory):
 
     @post_generation
     def password(self, create: bool, extracted: Sequence[Any], **kwargs):
-        password = Faker(
-            "password",
-            length=42,
-            special_chars=True,
-            digits=True,
-            upper_case=True,
-            lower_case=True,
-        ).generate(extra_kwargs={})
+        password = (
+            extracted
+            if extracted
+            else faker.Faker().password(
+                length=42,
+                special_chars=True,
+                digits=True,
+                upper_case=True,
+                lower_case=True,
+            )
+        )
         self.set_password(password)
 
     class Meta:

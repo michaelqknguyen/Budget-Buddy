@@ -7,23 +7,23 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paychecks', '0006_assigned_budget_paycheck'),
+        ("paychecks", "0006_assigned_budget_paycheck"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='deduction',
-            name='creation_date',
+            model_name="deduction",
+            name="creation_date",
             field=models.DateTimeField(blank=True, default=django.utils.timezone.now),
         ),
         migrations.AlterField(
-            model_name='paycheck',
-            name='creation_date',
+            model_name="paycheck",
+            name="creation_date",
             field=models.DateField(blank=True, default=django.utils.timezone.now),
         ),
         migrations.AlterField(
-            model_name='paystub',
-            name='creation_date',
+            model_name="paystub",
+            name="creation_date",
             field=models.DateTimeField(blank=True, default=django.utils.timezone.now),
         ),
     ]

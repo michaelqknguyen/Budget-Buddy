@@ -7,16 +7,33 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AccountType',
+            name="AccountType",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('account_type', models.CharField(choices=[('Savings', 'Savings'), ('Expenses', 'Expenses'), ('Flex', 'Flex')], max_length=20)),
-                ('is_cash_account', models.BooleanField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "account_type",
+                    models.CharField(
+                        choices=[
+                            ("Savings", "Savings"),
+                            ("Expenses", "Expenses"),
+                            ("Flex", "Flex"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("is_cash_account", models.BooleanField()),
             ],
         ),
     ]

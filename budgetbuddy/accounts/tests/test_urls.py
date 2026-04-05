@@ -1,6 +1,11 @@
 import pytest
-from django.urls import reverse, resolve
-from budgetbuddy.accounts.tests.factories import MoneyAccountFactory, BudgetAccountFactory
+
+from django.urls import resolve, reverse
+
+from budgetbuddy.accounts.tests.factories import (
+    BudgetAccountFactory,
+    MoneyAccountFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -12,7 +17,9 @@ class TestBudgetAccountUrl:
             reverse("budget:budget_account", kwargs={"account_id": proto_budget.id})
             == f"/budget/b/{proto_budget.id}"
         )
-        assert resolve(f"/budget/b/{proto_budget.id}").view_name == "budget:budget_account"
+        assert (
+            resolve(f"/budget/b/{proto_budget.id}").view_name == "budget:budget_account"
+        )
 
 
 class TestMoneyAccountUrl:
@@ -22,4 +29,6 @@ class TestMoneyAccountUrl:
             reverse("budget:money_account", kwargs={"account_id": proto_money.id})
             == f"/budget/m/{proto_money.id}"
         )
-        assert resolve(f"/budget/m/{proto_money.id}").view_name == "budget:money_account"
+        assert (
+            resolve(f"/budget/m/{proto_money.id}").view_name == "budget:money_account"
+        )

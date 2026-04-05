@@ -1,22 +1,29 @@
 from django.contrib import admin
-from budgetbuddy.paychecks.models import Paycheck, PayType, Deduction, Paystub
+
+from budgetbuddy.paychecks.models import Deduction, Paycheck, Paystub, PayType
 
 
 class PaycheckAdmin(admin.ModelAdmin):
-    list_display = ('company', 'annual_salary', 'paychecks_per_year', 'active')
+    list_display = ("company", "annual_salary", "paychecks_per_year", "active")
 
 
 class PayTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'paychecks_per_year')
+    list_display = ("name", "paychecks_per_year")
 
 
 class DeductionAdmin(admin.ModelAdmin):
-    list_display = ('paycheck', 'description', 'deduction_type', 'amount',
-                    'active', 'creation_date')
+    list_display = (
+        "paycheck",
+        "description",
+        "deduction_type",
+        "amount",
+        "active",
+        "creation_date",
+    )
 
 
 class PaystubAdmin(admin.ModelAdmin):
-    list_display = ('paycheck', 'gross_pay', 'start_date', 'end_date')
+    list_display = ("paycheck", "gross_pay", "start_date", "end_date")
 
 
 admin.site.register(Paycheck, PaycheckAdmin)

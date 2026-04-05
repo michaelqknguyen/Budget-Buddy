@@ -11,37 +11,107 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('accounts', '0012_moneyaccount_is_brokerage'),
+        ("accounts", "0012_moneyaccount_is_brokerage"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Stock',
+            name="Stock",
             fields=[
-                ('ticker', models.CharField(max_length=8, primary_key=True, serialize=False)),
-                ('asset_class', models.CharField(blank=True, max_length=200, null=True)),
+                (
+                    "ticker",
+                    models.CharField(max_length=8, primary_key=True, serialize=False),
+                ),
+                (
+                    "asset_class",
+                    models.CharField(blank=True, max_length=200, null=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='StockShares',
+            name="StockShares",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('brokerage_account', models.ForeignKey(blank=True, limit_choices_to={'is_brokerage': True}, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='accounts.MoneyAccount')),
-                ('budget_account', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='accounts.BudgetAccount')),
-                ('stock', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='shares', to='stocks.Stock')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "brokerage_account",
+                    models.ForeignKey(
+                        blank=True,
+                        limit_choices_to={"is_brokerage": True},
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="accounts.MoneyAccount",
+                    ),
+                ),
+                (
+                    "budget_account",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="accounts.BudgetAccount",
+                    ),
+                ),
+                (
+                    "stock",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="shares",
+                        to="stocks.Stock",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='StockTransaction',
+            name="StockTransaction",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('transaction_date', models.DateField()),
-                ('transaction_type', models.CharField(choices=[('B', 'Buy'), ('S', 'Sell')], max_length=2)),
-                ('num_shares', models.DecimalField(decimal_places=4, max_digits=20)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('shares', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='transactions', to='stocks.StockShares')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("transaction_date", models.DateField()),
+                (
+                    "transaction_type",
+                    models.CharField(
+                        choices=[("B", "Buy"), ("S", "Sell")], max_length=2
+                    ),
+                ),
+                ("num_shares", models.DecimalField(decimal_places=4, max_digits=20)),
+                ("price", models.DecimalField(decimal_places=2, max_digits=10)),
+                (
+                    "shares",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="transactions",
+                        to="stocks.StockShares",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]
