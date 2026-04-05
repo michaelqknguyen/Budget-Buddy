@@ -2,8 +2,6 @@ ARG PYTHON_VERSION=3.13-slim-bookworm
 
 FROM python:${PYTHON_VERSION} AS python-build-stage
 
-ARG BUILD_ENVIRONMENT=local
-
 RUN apt-get update && apt-get install --no-install-recommends -y \
   build-essential \
   libpq-dev
@@ -11,17 +9,15 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 COPY ./requirements .
 
 RUN pip wheel --wheel-dir /usr/src/app/wheels \
-  -r ${BUILD_ENVIRONMENT}.txt
+  -r local.txt
 
 
 FROM python:${PYTHON_VERSION} AS python-run-stage
 
-ARG BUILD_ENVIRONMENT=local
 ARG APP_HOME=/app
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
-ENV BUILD_ENV ${BUILD_ENVIRONMENT}
 
 WORKDIR ${APP_HOME}
 

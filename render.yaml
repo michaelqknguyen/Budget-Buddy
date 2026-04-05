@@ -4,8 +4,6 @@ services:
     name: budgetbuddy-ky
     env: docker
     dockerfilePath: Dockerfile
-    dockerBuildArgs:
-      BUILD_ENVIRONMENT: production
     region: ohio
     plan: free
     numInstances: 1
