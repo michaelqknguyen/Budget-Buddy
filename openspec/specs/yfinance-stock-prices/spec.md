@@ -16,15 +16,19 @@ The system SHALL use the `yfinance` library to fetch current market prices for s
 - **THEN** all tickers are fetched in a single batch operation and their `market_price` and `updated_at` fields are updated
 
 ### Requirement: Price caching respects update interval
-The system SHALL only refresh stock prices from yfinance if the last update was more than 900 seconds (15 minutes) ago.
+The system SHALL only refresh stock prices from Yahoo Finance if the last update was more than 900 seconds (15 minutes) ago. Price updates SHALL be triggered by the dedicated AJAX endpoint, not by balance calculation functions.
 
 #### Scenario: Cached price is used
 - **WHEN** `update_market_prices()` is called and a Stock's `updated_at` is less than 900 seconds ago
-- **THEN** that Stock's price is NOT re-fetched from yfinance
+- **THEN** that Stock's price is NOT re-fetched from Yahoo Finance
 
 #### Scenario: Stale price is refreshed
 - **WHEN** `update_market_prices()` is called and a Stock's `updated_at` is more than 900 seconds ago
-- **THEN** that Stock's price IS re-fetched from yfinance
+- **THEN** that Stock's price IS re-fetched from Yahoo Finance
+
+#### Scenario: Balance calculation does not trigger price updates
+- **WHEN** `calculate_investment_balance()` is called from a view or utility function
+- **THEN** it SHALL NOT call `update_market_prices()` and SHALL only read existing prices from the database
 
 ### Requirement: No RapidAPI dependency for stock prices
 The system SHALL NOT require any external API key or RapidAPI configuration for stock price fetching.

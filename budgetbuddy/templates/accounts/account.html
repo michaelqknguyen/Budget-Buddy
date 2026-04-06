@@ -68,7 +68,7 @@
           <div class="row no-gutters align-items-center">
             <div class="col mr-2">
               <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Investment Balance</div>
-              <div class="h5 mb-0 font-weight-bold 
+              <div id="investment-balance-display" class="h5 mb-0 font-weight-bold 
                   {% if stock_gains >= 0 %}
                   text-success
                   {% else %}
@@ -605,4 +605,42 @@
 <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
 <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
 <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
+<script>
+(function() {
+  // Refresh stock prices asynchronously after page load
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+  if (!csrfToken) return;
+
+  fetch("{% url 'budget:update_stock_prices' %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrfToken.value,
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin"
+  })
+  .then(function(response) {
+    if (!response.ok) return;
+    return response.json();
+  })
+  .then(function(data) {
+    if (!data) return;
+    var el = document.getElementById("investment-balance-display");
+    if (!el) return;
+
+    // Format numbers with commas
+    var balance = data.investment_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    var gains = data.stock_gains.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    el.textContent = "$" + balance + " ($" + gains + ")";
+
+    // Update color based on gains
+    el.classList.remove("text-success", "text-danger");
+    el.classList.add(data.stock_gains >= 0 ? "text-success" : "text-danger");
+  })
+  .catch(function() {
+    // Silently ignore errors -- keep last-known values displayed
+  });
+})();
+</script>
 {% endblock javascript %}
