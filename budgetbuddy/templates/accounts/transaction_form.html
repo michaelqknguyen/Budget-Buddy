@@ -11,8 +11,48 @@ Edit Transaction
 </div>
 <div class="row">
   <div class="container-fluid">
-    {% csrf_token %}
-    {% crispy form %}
+    <form method="post">
+      {% csrf_token %}
+      {% crispy form %}
+      {% if allocation_formset %}
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Budget Allocations</h6>
+        </div>
+        <div class="card-body">
+          {{ allocation_formset.management_form }}
+          {% if allocation_formset.non_form_errors %}
+          <div class="alert alert-danger">
+            {% for error in allocation_formset.non_form_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Budget Account</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aform in allocation_formset %}
+              <tr>
+                <td>{{ aform.budget_account }}</td>
+                <td>{{ aform.amount }}</td>
+                <td>{{ aform.description }}</td>
+                <td>{{ aform.DELETE }}{{ aform.id }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
   </div>
 </div>
 {% endblock content %}

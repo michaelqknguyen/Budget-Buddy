@@ -126,6 +126,7 @@
           {% csrf_token %}
           <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
           <input type="hidden" name="user" value="{{ user.id }}">
+          <input type="hidden" name="is_split" id="is_split" value="0">
           <div class="form-row align-items-center">
             <div class="col-auto">
               <label class="sr-only" for="transaction_date">Transaction Date</label>
@@ -160,7 +161,7 @@
             </div>
             <div class="col-auto">
               <label for="budget_account" class="sr-only"></label>
-              <select class="form-control mb-2" name="budget_account">
+              <select class="form-control mb-2" name="budget_account" id="id_budget_account">
                 <option hidden selected disabled value="">-- select category --</option>
                 <option value="">--------</option>
                 {% if active_account.money_or_budget == 'b' %}
@@ -175,6 +176,61 @@
             <div class="col-auto">
               <button type="submit" class="btn btn-primary mb-2">Submit</button>
             </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-outline-secondary mb-2" id="splitToggle" onclick="toggleSplitMode()">Split</button>
+            </div>
+          </div>
+          <!-- Split allocation rows (hidden by default) -->
+          <div id="splitSection" style="display: none;">
+            <input type="hidden" name="allocation-TOTAL_FORMS" id="id_allocation-TOTAL_FORMS" value="2">
+            <input type="hidden" name="allocation-INITIAL_FORMS" value="0">
+            <input type="hidden" name="allocation-MIN_NUM_FORMS" value="1">
+            <input type="hidden" name="allocation-MAX_NUM_FORMS" value="10">
+            <div class="mb-2">
+              <strong>Split Allocations</strong>
+              <span class="ml-2" id="splitTotal">Total: $0.00</span>
+            </div>
+            <div id="allocationRows">
+              <div class="form-row align-items-center allocation-row mb-1" data-index="0">
+                <div class="col-auto">
+                  <select class="form-control" name="allocation-0-budget_account">
+                    <option value="">-- category --</option>
+                    {% for account in budget_accounts %}
+                    <option value="{{ account.id }}">{{ account }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-auto">
+                  <input type="number" step=".01" class="form-control allocation-amount" name="allocation-0-amount" placeholder="0.00">
+                </div>
+                <div class="col-auto">
+                  <input type="text" class="form-control" name="allocation-0-description" placeholder="Description (optional)">
+                </div>
+                <div class="col-auto">
+                  <button type="button" class="btn btn-sm btn-danger" onclick="removeAllocationRow(this)">&times;</button>
+                </div>
+              </div>
+              <div class="form-row align-items-center allocation-row mb-1" data-index="1">
+                <div class="col-auto">
+                  <select class="form-control" name="allocation-1-budget_account">
+                    <option value="">-- category --</option>
+                    {% for account in budget_accounts %}
+                    <option value="{{ account.id }}">{{ account }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-auto">
+                  <input type="number" step=".01" class="form-control allocation-amount" name="allocation-1-amount" placeholder="0.00">
+                </div>
+                <div class="col-auto">
+                  <input type="text" class="form-control" name="allocation-1-description" placeholder="Description (optional)">
+                </div>
+                <div class="col-auto">
+                  <button type="button" class="btn btn-sm btn-danger" onclick="removeAllocationRow(this)">&times;</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addAllocationRow()">+ Add Row</button>
           </div>
         </form>
       </div>
@@ -362,7 +418,7 @@
                   text-success
                   {% endif %}">${{ transaction.amount_spent | intcomma }}</td>
               <td>{{ transaction.money_account }}</td>
-              <td>{{ transaction.budget_account }}</td>
+              <td>{% for alloc in transaction.allocations.all %}{{ alloc.budget_account }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
               <td>
                 <div class="row">
                   {% if active_account.money_or_budget == 'm' %}
@@ -615,9 +671,10 @@
     method: "POST",
     headers: {
       "X-CSRFToken": csrfToken.value,
-      "Content-Type": "application/json"
+      "Content-Type": "application/x-www-form-urlencoded"
     },
-    credentials: "same-origin"
+    credentials: "same-origin",
+    body: "account_id={{ active_account.id|default:'' }}&account_type={{ active_account.money_or_budget|default:'' }}"
   })
   .then(function(response) {
     if (!response.ok) return;
@@ -642,5 +699,128 @@
     // Silently ignore errors -- keep last-known values displayed
   });
 })();
+</script>
+<script>
+// Split transaction functionality
+var splitMode = false;
+
+function toggleSplitMode() {
+  splitMode = !splitMode;
+  var section = document.getElementById("splitSection");
+  var toggle = document.getElementById("splitToggle");
+  var budgetSelect = document.getElementById("id_budget_account");
+  var isSplitField = document.getElementById("is_split");
+
+  if (splitMode) {
+    section.style.display = "block";
+    toggle.textContent = "Single";
+    toggle.classList.remove("btn-outline-secondary");
+    toggle.classList.add("btn-outline-warning");
+    budgetSelect._savedValue = budgetSelect.value;
+    budgetSelect.value = "";
+    budgetSelect.disabled = true;
+    isSplitField.value = "1";
+  } else {
+    section.style.display = "none";
+    toggle.textContent = "Split";
+    toggle.classList.remove("btn-outline-warning");
+    toggle.classList.add("btn-outline-secondary");
+    budgetSelect.disabled = false;
+    if (budgetSelect._savedValue) {
+      budgetSelect.value = budgetSelect._savedValue;
+    }
+    isSplitField.value = "0";
+  }
+}
+
+function addAllocationRow() {
+  var container = document.getElementById("allocationRows");
+  var totalField = document.getElementById("id_allocation-TOTAL_FORMS");
+  var idx = parseInt(totalField.value);
+
+  // Get budget account options from existing row
+  var firstSelect = container.querySelector("select");
+  var optionsHtml = firstSelect ? firstSelect.innerHTML : '<option value="">-- category --</option>';
+
+  var row = document.createElement("div");
+  row.className = "form-row align-items-center allocation-row mb-1";
+  row.setAttribute("data-index", idx);
+  row.innerHTML =
+    '<div class="col-auto"><select class="form-control" name="allocation-' + idx + '-budget_account">' + optionsHtml + '</select></div>' +
+    '<div class="col-auto"><input type="number" step=".01" class="form-control allocation-amount" name="allocation-' + idx + '-amount" placeholder="0.00"></div>' +
+    '<div class="col-auto"><input type="text" class="form-control" name="allocation-' + idx + '-description" placeholder="Description (optional)"></div>' +
+    '<div class="col-auto"><button type="button" class="btn btn-sm btn-danger" onclick="removeAllocationRow(this)">&times;</button></div>';
+
+  container.appendChild(row);
+  totalField.value = idx + 1;
+  attachAmountListeners();
+}
+
+function removeAllocationRow(btn) {
+  var rows = document.querySelectorAll(".allocation-row");
+  if (rows.length <= 1) return; // keep at least one
+  btn.closest(".allocation-row").remove();
+  updateSplitTotal();
+}
+
+function updateSplitTotal() {
+  var inputs = document.querySelectorAll(".allocation-amount");
+  var total = 0;
+  inputs.forEach(function(inp) {
+    total += parseFloat(inp.value) || 0;
+  });
+  var el = document.getElementById("splitTotal");
+  var txnAmount = parseFloat(document.querySelector('[name="amount_spent"]').value) || 0;
+  var match = Math.abs(total - txnAmount) < 0.01;
+  el.textContent = "Total: $" + total.toFixed(2) + (match ? " ✓" : " (should be $" + txnAmount.toFixed(2) + ")");
+  el.style.color = match ? "green" : "red";
+}
+
+function attachAmountListeners() {
+  document.querySelectorAll(".allocation-amount").forEach(function(inp) {
+    inp.removeEventListener("input", updateSplitTotal);
+    inp.addEventListener("input", updateSplitTotal);
+  });
+  // Also listen on the main amount field
+  var mainAmount = document.querySelector('[name="amount_spent"]');
+  if (mainAmount) {
+    mainAmount.removeEventListener("input", updateSplitTotal);
+    mainAmount.addEventListener("input", updateSplitTotal);
+  }
+}
+attachAmountListeners();
+
+// Prevent form submission when split allocations don't sum to transaction amount
+var txnForm = document.querySelector('form[action="{% url "budget:transaction_create" %}"]');
+if (txnForm) {
+  txnForm.addEventListener("submit", function(e) {
+    if (document.getElementById("is_split").value !== "1") return;
+
+    var inputs = document.querySelectorAll(".allocation-amount");
+    var total = 0;
+    inputs.forEach(function(inp) {
+      total += parseFloat(inp.value) || 0;
+    });
+    // Round to avoid floating point issues
+    total = Math.round(total * 100) / 100;
+    var txnAmount = parseFloat(document.querySelector('[name="amount_spent"]').value) || 0;
+    txnAmount = Math.round(txnAmount * 100) / 100;
+
+    if (Math.abs(total - txnAmount) >= 0.01) {
+      e.preventDefault();
+      var errEl = document.getElementById("splitError");
+      if (!errEl) {
+        errEl = document.createElement("div");
+        errEl.id = "splitError";
+        errEl.className = "alert alert-danger mt-2";
+        document.getElementById("splitSection").appendChild(errEl);
+      }
+      errEl.textContent = "Split allocations ($" + total.toFixed(2) + ") must equal the transaction amount ($" + txnAmount.toFixed(2) + ")";
+    } else {
+      var errEl = document.getElementById("splitError");
+      if (errEl) errEl.remove();
+    }
+  });
+}
 </script>
 {% endblock javascript %}

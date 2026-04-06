@@ -4,6 +4,7 @@ from factory.django import DjangoModelFactory
 from budgetbuddy.accounts.models import (
     AccountType,
     BudgetAccount,
+    BudgetAllocation,
     MoneyAccount,
     Transaction,
 )
@@ -72,9 +73,18 @@ class TransactionFactory(DjangoModelFactory):
     transaction_date = Faker("date_between", start_date="-1y", end_date="today")
     amount_spent = Faker("pydecimal", min_value=-2000, max_value=2000, right_digits=2)
     money_account = SubFactory(MoneyAccountFactory)
-    budget_account = SubFactory(BudgetAccountFactory)
     paystub = SubFactory(PaystubFactory)
     user = SubFactory(UserFactory)
 
     class Meta:
         model = Transaction
+
+
+class BudgetAllocationFactory(DjangoModelFactory):
+    transaction = SubFactory(TransactionFactory)
+    budget_account = SubFactory(BudgetAccountFactory)
+    amount = Faker("pydecimal", min_value=-2000, max_value=2000, right_digits=2)
+    description = ""
+
+    class Meta:
+        model = BudgetAllocation

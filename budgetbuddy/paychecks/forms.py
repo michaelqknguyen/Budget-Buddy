@@ -91,19 +91,21 @@ class TransactionPaystubForm(forms.ModelForm):
     month_contribution = forms.DecimalField(
         decimal_places=2, max_digits=8, required=False
     )
+    # budget_account stored here for form context, used to create BudgetAllocation on save
+    budget_account = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+    # display-only field for showing the budget account name in the template
+    budget_account_name = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = Transaction
         fields = (
             "amount_spent",
-            "budget_account",
             "money_account",
             "monthly_contribution",
             "month_contribution",
         )
         exclude = ("user", "transaction_date", "description", "notes", "paystub")
         widgets = {
-            "budget_account": forms.HiddenInput(),
             "money_account": forms.Select(
                 attrs={
                     "class": "form-control mb-2",

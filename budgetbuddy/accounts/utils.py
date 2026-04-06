@@ -40,11 +40,17 @@ def get_date_range(request):
 
 def get_transactions(user, active_account=None, account_type=None):
     if account_type is MoneyAccount:
-        return Transaction.objects.filter(user=user, money_account=active_account)
+        return Transaction.objects.filter(
+            user=user, money_account=active_account
+        ).prefetch_related("allocations__budget_account")
     elif account_type is BudgetAccount:
-        return Transaction.objects.filter(user=user, budget_account=active_account)
+        return Transaction.objects.filter(
+            user=user, allocations__budget_account=active_account
+        ).prefetch_related("allocations__budget_account")
     else:
-        return Transaction.objects.filter(user=user)
+        return Transaction.objects.filter(user=user).prefetch_related(
+            "allocations__budget_account"
+        )
 
 
 def round_up(n, decimals=0):

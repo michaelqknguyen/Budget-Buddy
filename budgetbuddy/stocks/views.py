@@ -9,7 +9,12 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic.edit import DeleteView, UpdateView
 
-from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount, Transaction
+from budgetbuddy.accounts.models import (
+    BudgetAccount,
+    BudgetAllocation,
+    MoneyAccount,
+    Transaction,
+)
 from budgetbuddy.accounts.utils import ensure_user_access
 from budgetbuddy.accounts.views import account_page_reverse
 from budgetbuddy.stocks.forms import StockTransactionForm
@@ -75,10 +80,14 @@ def create_stock_transaction(request):
                 amount_spent=transaction_amount,
                 user=request.user,
                 money_account=brokerage_account_object,
-                budget_account=budget_account_object,
             )
 
             transaction.save()
+            BudgetAllocation.objects.create(
+                transaction=transaction,
+                budget_account=budget_account_object,
+                amount=transaction_amount,
+            )
             stock_transaction.save()
             stock_shares.save(update_fields=["num_shares"])
             messages.success(

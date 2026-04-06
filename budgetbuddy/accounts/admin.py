@@ -3,6 +3,7 @@ from django.contrib import admin
 from budgetbuddy.accounts.models import (
     AccountType,
     BudgetAccount,
+    BudgetAllocation,
     MoneyAccount,
     Transaction,
 )
@@ -26,17 +27,29 @@ class BudgetAccountAdmin(admin.ModelAdmin):
     )
 
 
+class BudgetAllocationInline(admin.TabularInline):
+    model = BudgetAllocation
+    extra = 1
+
+
 class TransactionAdmin(admin.ModelAdmin):
     list_display = (
         "description",
         "transaction_date",
         "amount_spent",
         "money_account_id",
-        "budget_account_id",
     )
+    inlines = [BudgetAllocationInline]
+
+
+class BudgetAllocationAdmin(admin.ModelAdmin):
+    list_display = ("transaction", "budget_account", "amount", "description")
+    list_filter = ("budget_account",)
+    search_fields = ("transaction__description", "budget_account__name", "description")
 
 
 admin.site.register(AccountType, AccountTypeAdmin)
 admin.site.register(MoneyAccount, MoneyAccountAdmin)
 admin.site.register(BudgetAccount, BudgetAccountAdmin)
+admin.site.register(BudgetAllocation, BudgetAllocationAdmin)
 admin.site.register(Transaction, TransactionAdmin)
