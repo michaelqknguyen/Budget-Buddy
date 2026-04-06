@@ -79,8 +79,7 @@ class TransactionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_method = "post"
-        self.helper.add_input(Submit("submit", "Submit"))
+        self.helper.form_tag = False
 
 
 class BudgetAllocationForm(forms.ModelForm):

@@ -21,6 +21,13 @@ Edit Transaction
         </div>
         <div class="card-body">
           {{ allocation_formset.management_form }}
+          {% if allocation_formset.non_form_errors %}
+          <div class="alert alert-danger">
+            {% for error in allocation_formset.non_form_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
           <table class="table table-bordered">
             <thead>
               <tr>
@@ -44,6 +51,7 @@ Edit Transaction
         </div>
       </div>
       {% endif %}
+      <button type="submit" class="btn btn-primary">Submit</button>
     </form>
   </div>
 </div>
