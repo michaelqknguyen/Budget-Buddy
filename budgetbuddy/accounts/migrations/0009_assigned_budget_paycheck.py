@@ -7,14 +7,19 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paychecks', '0004_assigned_budget_paycheck'),
-        ('accounts', '0008_auto_20190719_1620'),
+        ("paychecks", "0004_assigned_budget_paycheck"),
+        ("accounts", "0008_auto_20190719_1620"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='budgetaccount',
-            name='assigned_paycheck',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='paychecks.Paycheck'),
+            model_name="budgetaccount",
+            name="assigned_paycheck",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="paychecks.Paycheck",
+            ),
         ),
     ]

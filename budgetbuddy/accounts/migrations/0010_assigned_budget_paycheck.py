@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paychecks', '0005_assigned_budget_paycheck'),
-        ('accounts', '0009_assigned_budget_paycheck'),
+        ("paychecks", "0005_assigned_budget_paycheck"),
+        ("accounts", "0009_assigned_budget_paycheck"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='budgetaccount',
-            name='assigned_paycheck',
+            model_name="budgetaccount",
+            name="assigned_paycheck",
         ),
         migrations.AddField(
-            model_name='budgetaccount',
-            name='assigned_paycheck',
-            field=models.ManyToManyField(blank=True, null=True, to='paychecks.Paycheck'),
+            model_name="budgetaccount",
+            name="assigned_paycheck",
+            field=models.ManyToManyField(
+                blank=True, null=True, to="paychecks.Paycheck"
+            ),
         ),
     ]

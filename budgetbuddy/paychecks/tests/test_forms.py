@@ -1,10 +1,26 @@
-import pytest
 from random import randint
-from django.test import TransactionTestCase
+
+import pytest
+
 from django.db.utils import IntegrityError
-from budgetbuddy.paychecks.forms import PaycheckForm, DeductionForm, PaystubForm, TransactionPaystubForm
-from budgetbuddy.paychecks.tests.factories import PaycheckFactory, PaystubFactory, DeductionFactory
-from budgetbuddy.accounts.tests.factories import MoneyAccountFactory, BudgetAccountFactory, TransactionFactory
+from django.test import TransactionTestCase
+
+from budgetbuddy.accounts.tests.factories import (
+    BudgetAccountFactory,
+    MoneyAccountFactory,
+    TransactionFactory,
+)
+from budgetbuddy.paychecks.forms import (
+    DeductionForm,
+    PaycheckForm,
+    PaystubForm,
+    TransactionPaystubForm,
+)
+from budgetbuddy.paychecks.tests.factories import (
+    DeductionFactory,
+    PaycheckFactory,
+    PaystubFactory,
+)
 from budgetbuddy.users.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -15,12 +31,14 @@ class TestPaycheckForm:
         proto_paycheck = PaycheckFactory.build()
         proto_user = UserFactory.create()
 
-        form = PaycheckForm({
-            "company": proto_paycheck.company,
-            "annual_salary": proto_paycheck.annual_salary,
-            "paychecks_per_year": proto_paycheck.paychecks_per_year,
-            "user": proto_user.id,
-        })
+        form = PaycheckForm(
+            {
+                "company": proto_paycheck.company,
+                "annual_salary": proto_paycheck.annual_salary,
+                "paychecks_per_year": proto_paycheck.paychecks_per_year,
+                "user": proto_user.id,
+            }
+        )
         assert form.is_valid()
         form.save()
 
@@ -31,13 +49,15 @@ class TestDeductionForm:
         proto_user = UserFactory.create()
         proto_deduction = DeductionFactory.build()
 
-        form = DeductionForm({
-            "paycheck": proto_paycheck.id,
-            "description": proto_deduction.description,
-            "deduction_type": proto_deduction.deduction_type,
-            "amount": proto_deduction.amount,
-            "user": proto_user.id,
-        })
+        form = DeductionForm(
+            {
+                "paycheck": proto_paycheck.id,
+                "description": proto_deduction.description,
+                "deduction_type": proto_deduction.deduction_type,
+                "amount": proto_deduction.amount,
+                "user": proto_user.id,
+            }
+        )
         assert form.is_valid()
         form.save()
 
@@ -48,12 +68,14 @@ class TestPaystubForm(TransactionTestCase):
         proto_paycheck = PaycheckFactory.create()
         proto_user = UserFactory.create()
 
-        form = PaystubForm({
-            "paycheck": proto_paycheck.id,
-            "gross_pay": proto_paystub.gross_pay,
-            "start_date": proto_paystub.start_date,
-            "end_date": proto_paystub.end_date,
-        })
+        form = PaystubForm(
+            {
+                "paycheck": proto_paycheck.id,
+                "gross_pay": proto_paystub.gross_pay,
+                "start_date": proto_paystub.start_date,
+                "end_date": proto_paystub.end_date,
+            }
+        )
         assert form.is_valid()
 
         # user is still needed
@@ -71,13 +93,15 @@ class TestTransactionPaystubForm(TransactionTestCase):
         proto_budget = BudgetAccountFactory.create()
         proto_transaction = TransactionFactory.build()
 
-        form = TransactionPaystubForm({
-            "amount_spent": proto_transaction.amount_spent,
-            "budget_account": proto_budget.id,
-            "money_account": proto_money.id,
-            "monthly_contribution": 40.2,
-            "month_contribution": 30.2
-        })
+        form = TransactionPaystubForm(
+            {
+                "amount_spent": proto_transaction.amount_spent,
+                "budget_account": proto_budget.id,
+                "money_account": proto_money.id,
+                "monthly_contribution": 40.2,
+                "month_contribution": 30.2,
+            }
+        )
         assert form.is_valid()
 
         # user, transaction_date, description still needed
@@ -95,13 +119,16 @@ class TestTransactionPaystubForm(TransactionTestCase):
         proto_budget = BudgetAccountFactory.create(user=proto_user)
         proto_transaction = TransactionFactory.build(user=proto_user)
 
-        form = TransactionPaystubForm({
-            "amount_spent": proto_transaction.amount_spent,
-            "budget_account": proto_budget.id,
-            # "money_account": proto_money.id,
-            "monthly_contribution": 40.2,
-            "month_contribution": 30.2
-        }, user=proto_user)
+        form = TransactionPaystubForm(
+            {
+                "amount_spent": proto_transaction.amount_spent,
+                "budget_account": proto_budget.id,
+                # "money_account": proto_money.id,
+                "monthly_contribution": 40.2,
+                "month_contribution": 30.2,
+            },
+            user=proto_user,
+        )
         assert form.is_valid()
 
         # user, transaction_date, description still needed
@@ -109,9 +136,9 @@ class TestTransactionPaystubForm(TransactionTestCase):
             form.save()
 
         # show money_account list made
-        self.assertEqual(len(proto_moneys), form.fields['money_account'].queryset.count())
-        self.assertQuerysetEqual(
-            form.fields['money_account'].queryset,
-            [repr(m) for m in proto_moneys],
-            ordered=False
+        self.assertEqual(
+            len(proto_moneys), form.fields["money_account"].queryset.count()
+        )
+        self.assertQuerySetEqual(
+            form.fields["money_account"].queryset, proto_moneys, ordered=False
         )

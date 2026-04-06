@@ -1,0 +1,57 @@
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENVIRONMENT: local
+    container_name: budgetbuddy_django
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "python manage.py migrate &&
+               python manage.py runserver_plus 0.0.0.0:8000"
+
+  postgres:
+    image: postgres:17
+    container_name: budgetbuddy_postgres
+    volumes:
+      - budgetbuddy_postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./.envs/.local/.postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: budgetbuddy_redis
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: budgetbuddy_mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  adminer:
+    image: adminer:latest
+    container_name: budgetbuddy_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  budgetbuddy_postgres_data:

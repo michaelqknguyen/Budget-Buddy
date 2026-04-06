@@ -1,7 +1,13 @@
 import pytest
+
 from django.test import TestCase
-from budgetbuddy.paychecks.tests.factories import PaycheckFactory, PaystubFactory, DeductionFactory
+
 from budgetbuddy.paychecks.models import PayType
+from budgetbuddy.paychecks.tests.factories import (
+    DeductionFactory,
+    PaycheckFactory,
+    PaystubFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -17,7 +23,7 @@ class PaystubModelTest(TestCase):
         proto_paystub = PaystubFactory()
         self.assertEqual(
             str(proto_paystub),
-            '{} - {}'.format(proto_paystub.paycheck.company, proto_paystub.id)
+            "{} - {}".format(proto_paystub.paycheck.company, proto_paystub.id),
         )
 
 
@@ -26,11 +32,13 @@ class DeductionModelTest(TestCase):
         proto_deduction = DeductionFactory()
         self.assertEqual(
             str(proto_deduction),
-            '{} - {}'.format(proto_deduction.paycheck.company, proto_deduction.description)
+            "{} - {}".format(
+                proto_deduction.paycheck.company, proto_deduction.description
+            ),
         )
 
 
 class PaytypeModelTest(TestCase):
     def test_string_representation(self):
-        paytype = PayType(paychecks_per_year=52, name='Annually')
+        paytype = PayType(paychecks_per_year=52, name="Annually")
         self.assertEqual(str(paytype), paytype.name)

@@ -2,3 +2,22 @@
 # ------------------------------------------------------------------------------
 USE_DOCKER=yes
 IPYTHONDIR=/app/.ipython
+
+# Django
+# ------------------------------------------------------------------------------
+DJANGO_SETTINGS_MODULE=config.settings.local
+DJANGO_DEBUG=True
+DJANGO_SECRET_KEY=change-me-to-a-real-secret-key
+DJANGO_ACCOUNT_ALLOW_REGISTRATION=True
+DJANGO_ADMIN_URL=admin/
+DJANGO_ALLOWED_HOSTS=localhost,0.0.0.0,127.0.0.1
+
+# Email (Mailpit)
+# ------------------------------------------------------------------------------
+DJANGO_EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=mailpit
+EMAIL_PORT=1025
+
+# Redis
+# ------------------------------------------------------------------------------
+REDIS_URL=redis://redis:6379/0

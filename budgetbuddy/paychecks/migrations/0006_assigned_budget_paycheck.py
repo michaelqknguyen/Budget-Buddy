@@ -2,29 +2,43 @@
 
 import datetime
 from django.db import migrations, models
-from django.utils.timezone import utc
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paychecks', '0005_assigned_budget_paycheck'),
+        ("paychecks", "0005_assigned_budget_paycheck"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='deduction',
-            name='creation_date',
-            field=models.DateTimeField(blank=True, default=datetime.datetime(2020, 2, 18, 19, 24, 31, 189651, tzinfo=utc)),
+            model_name="deduction",
+            name="creation_date",
+            field=models.DateTimeField(
+                blank=True,
+                default=datetime.datetime(
+                    2020, 2, 18, 19, 24, 31, 189651, tzinfo=datetime.timezone.utc
+                ),
+            ),
         ),
         migrations.AlterField(
-            model_name='paycheck',
-            name='creation_date',
-            field=models.DateField(blank=True, default=datetime.datetime(2020, 2, 18, 19, 24, 31, 188898, tzinfo=utc)),
+            model_name="paycheck",
+            name="creation_date",
+            field=models.DateField(
+                blank=True,
+                default=datetime.datetime(
+                    2020, 2, 18, 19, 24, 31, 188898, tzinfo=datetime.timezone.utc
+                ),
+            ),
         ),
         migrations.AlterField(
-            model_name='paystub',
-            name='creation_date',
-            field=models.DateTimeField(blank=True, default=datetime.datetime(2020, 2, 18, 19, 24, 31, 190273, tzinfo=utc)),
+            model_name="paystub",
+            name="creation_date",
+            field=models.DateTimeField(
+                blank=True,
+                default=datetime.datetime(
+                    2020, 2, 18, 19, 24, 31, 190273, tzinfo=datetime.timezone.utc
+                ),
+            ),
         ),
     ]

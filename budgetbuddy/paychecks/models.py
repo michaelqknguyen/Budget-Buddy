@@ -1,6 +1,7 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
+
 from budgetbuddy.paychecks.choices import deduction_type_choices
 
 
@@ -19,15 +20,14 @@ class Paycheck(models.Model):
 class Deduction(models.Model):
     paycheck = models.ForeignKey(Paycheck, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    deduction_type = models.CharField(max_length=20,
-                                      choices=deduction_type_choices)
+    deduction_type = models.CharField(max_length=20, choices=deduction_type_choices)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     active = models.BooleanField(default=True)
     creation_date = models.DateTimeField(default=timezone.now, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):
-        return('{} - {}'.format(self.paycheck.company, self.description))
+        return "{} - {}".format(self.paycheck.company, self.description)
 
 
 class Paystub(models.Model):
@@ -39,7 +39,7 @@ class Paystub(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
     def __str__(self):
-        return('{} - {}'.format(self.paycheck.company, self.id))
+        return "{} - {}".format(self.paycheck.company, self.id)  # type: ignore[attr-defined]
 
 
 class PayType(models.Model):

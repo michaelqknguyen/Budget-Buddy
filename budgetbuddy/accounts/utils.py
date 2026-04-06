@@ -4,7 +4,8 @@ import math
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from budgetbuddy.accounts.models import Transaction, BudgetAccount, MoneyAccount
+
+from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount, Transaction
 
 
 def subtract_one_month(t):
@@ -25,12 +26,12 @@ def subtract_one_month(t):
 
 
 def get_date_range(request):
-    if 'end_date' in request.GET:
-        end_date = parse_date(request.GET.get('end_date'))
+    if "end_date" in request.GET:
+        end_date = parse_date(request.GET.get("end_date"))
     else:
         end_date = datetime.date.today()
-    if 'start_date' in request.GET:
-        start_date = parse_date(request.GET.get('start_date'))
+    if "start_date" in request.GET:
+        start_date = parse_date(request.GET.get("start_date"))
     else:
         start_date = subtract_one_month(end_date)
 
@@ -47,7 +48,7 @@ def get_transactions(user, active_account=None, account_type=None):
 
 
 def round_up(n, decimals=0):
-    multiplier = 10 ** decimals
+    multiplier = 10**decimals
     return math.ceil(n * multiplier) / multiplier
 
 
@@ -55,4 +56,4 @@ def ensure_user_access(model: models.Model, pk: int, user):
     """ensure user has access to specified model"""
     if model is None:
         return None
-    return get_object_or_404(model, pk=pk, user=user)
+    return get_object_or_404(model, pk=pk, user=user)  # type: ignore[arg-type]

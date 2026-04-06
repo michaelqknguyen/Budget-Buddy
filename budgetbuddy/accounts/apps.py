@@ -3,5 +3,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class AccountsConfig(AppConfig):
-    name = 'budgetbuddy.accounts'
+    name = "budgetbuddy.accounts"
     verbose_name = _("Accounts")
+    default_auto_field = "django.db.models.BigAutoField"

@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 class UsersConfig(AppConfig):
     name = "budgetbuddy.users"
     verbose_name = _("Users")
+    default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
         try:
