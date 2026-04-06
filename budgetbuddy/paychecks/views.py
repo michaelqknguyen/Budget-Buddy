@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from budgetbuddy.accounts.models import BudgetAccount, Transaction
+from budgetbuddy.accounts.models import BudgetAccount, BudgetAllocation, Transaction
 from budgetbuddy.accounts.utils import round_up
 from budgetbuddy.paychecks.forms import (
     DeductionForm,
@@ -61,14 +61,15 @@ def index(request, paycheck_id=None):
         paycheck=paycheck, user=user
     )
     for paystub in paystubs_list:
+        flex_budget = BudgetAccount.objects.get(
+            Q(account_type__account_type="Flex"),
+            user=user,
+        )
         transactions = Transaction.objects.filter(
             transaction_date__gte=paystub.start_date,
             transaction_date__lt=paystub.end_date,
             user=user,
-            budget_account=BudgetAccount.objects.get(
-                Q(account_type__account_type="Flex"),
-                user=user,
-            ),
+            allocations__budget_account=flex_budget,
         ).exclude(notes="paystub")
         paystub.spent_in_period = (  # type: ignore[attr-defined]
             transactions.aggregate(spent=Sum("amount_spent"))["spent"] or 0
@@ -133,21 +134,44 @@ def add_paystub(request, paycheck_id):
                 # dont create for $0 contribution
                 if contribution.amount_spent != 0:
                     contribution.save()
+                    # Create BudgetAllocation from form's budget_account field
+                    # The budget_account is passed via the hidden field in the formset
+                    form_index = transaction_formset.forms.index(
+                        next(
+                            f
+                            for f in transaction_formset.forms
+                            if f.instance == contribution
+                        )
+                    )
+                    ba_id = transaction_formset.forms[form_index].cleaned_data.get(
+                        "budget_account"
+                    )
+                    if ba_id:
+                        BudgetAllocation.objects.create(
+                            transaction=contribution,
+                            budget_account_id=ba_id,
+                            amount=contribution.amount_spent,
+                        )
 
             # Creating the flex budget contribution
+            flex_budget_account = BudgetAccount.objects.get(
+                Q(account_type__account_type="Flex"),
+                user=user,
+            )
             flex_contribution = Transaction(
                 description="Paycheck Contribution",
                 notes="paystub",
                 user=user,
                 transaction_date=end_date,
                 paystub=paystub,
-                budget_account=BudgetAccount.objects.get(
-                    Q(account_type__account_type="Flex"),
-                    user=user,
-                ),
                 amount_spent=request.POST["flex_amount_spent"],
             )
             flex_contribution.save()
+            BudgetAllocation.objects.create(
+                transaction=flex_contribution,
+                budget_account=flex_budget_account,
+                amount=flex_contribution.amount_spent,
+            )
 
             # adding necessary data for each money deposit
             for deposit in deposit_formset.save(commit=False):
@@ -166,11 +190,12 @@ def add_paystub(request, paycheck_id):
     for account in budget_accounts:
         # initialize a transaction data for each budget account
         account_trans = {}
-        account_trans["budget_account"] = account
+        account_trans["budget_account"] = account.id
+        account_trans["budget_account_name"] = account.name
 
         account_trans_list = Transaction.objects.filter(
             user=user,
-            budget_account=account,
+            allocations__budget_account=account,
             paystub__isnull=False,
             transaction_date__year=today.year,
             transaction_date__month=today.month,

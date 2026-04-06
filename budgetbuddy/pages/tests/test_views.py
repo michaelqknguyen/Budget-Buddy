@@ -5,7 +5,11 @@ import pytest
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from budgetbuddy.accounts.tests.factories import MoneyAccountFactory, TransactionFactory
+from budgetbuddy.accounts.tests.factories import (
+    BudgetAllocationFactory,
+    MoneyAccountFactory,
+    TransactionFactory,
+)
 from budgetbuddy.accounts.tests.utils import create_flex_account
 from budgetbuddy.users.tests.factories import UserFactory
 
@@ -50,8 +54,13 @@ class TestHomePage(TestCase):
         TransactionFactory(
             user=self.user, money_account=money_account, amount_spent=500
         )
-        TransactionFactory(
-            user=self.user, budget_account=flex_account, amount_spent=500
+        transaction = TransactionFactory(
+            user=self.user, amount_spent=500
+        )
+        BudgetAllocationFactory(
+            transaction=transaction,
+            budget_account=flex_account,
+            amount=500,
         )
 
         response = self.client.get(self.request_url)

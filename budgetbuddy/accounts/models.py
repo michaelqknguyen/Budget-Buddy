@@ -83,10 +83,24 @@ class Transaction(models.Model):
     money_account = models.ForeignKey(
         MoneyAccount, null=True, blank=True, on_delete=models.DO_NOTHING
     )
-    budget_account = models.ForeignKey(
-        BudgetAccount, null=True, blank=True, on_delete=models.DO_NOTHING
-    )
     paystub = models.ForeignKey(
         Paystub, null=True, blank=True, on_delete=models.CASCADE
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+
+    def __str__(self):
+        return f"{self.description} ({self.amount_spent})"
+
+
+class BudgetAllocation(models.Model):
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="allocations"
+    )
+    budget_account = models.ForeignKey(
+        BudgetAccount, on_delete=models.DO_NOTHING, related_name="allocations"
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=200, blank=True)
+
+    def __str__(self):
+        return f"{self.budget_account} - {self.amount}"

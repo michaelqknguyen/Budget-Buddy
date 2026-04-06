@@ -65,7 +65,8 @@ New {{ paycheck }} Paystub
                   {% for form in transaction_formset %}
                   {{ form.id }}
                   {{ form.budget_account }}
-                  <td>{{ form.budget_account.initial }}</td>
+                  {{ form.budget_account_name }}
+                  <td>{{ form.initial.budget_account_name }}</td>
                   <td>${{ form.monthly_contribution.initial | intcomma }}</td>
                   <td>${{ form.month_contribution.initial | intcomma}}</td>
                   <td>${{ form.amount_spent.initial | intcomma }}</td>

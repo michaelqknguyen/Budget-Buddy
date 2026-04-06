@@ -20,8 +20,14 @@ from budgetbuddy.accounts.forms import (
     BudgetAccountForm,
     MoneyAccountForm,
     TransactionForm,
+    ValidatedAllocationFormSet,
 )
-from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount, Transaction
+from budgetbuddy.accounts.models import (
+    BudgetAccount,
+    BudgetAllocation,
+    MoneyAccount,
+    Transaction,
+)
 from budgetbuddy.accounts.utils import get_date_range, get_transactions
 from budgetbuddy.stocks.models import Stock, StockTransaction
 from budgetbuddy.stocks.utils import calculate_investment_balance, get_stock_shares
@@ -55,7 +61,7 @@ def index(request):
 
     try:
         flex_account = BudgetAccount.objects.annotate(
-            total=Coalesce(Sum(F("transaction__amount_spent")), Decimal(0))
+            total=Coalesce(Sum(F("allocations__amount")), Decimal(0))
         ).get(
             Q(account_type__account_type="Flex"),
             user=user,
@@ -66,7 +72,7 @@ def index(request):
     budget_accounts = (
         BudgetAccount.objects.filter(active__in=(True, budget_active), user=user)
         .exclude(Q(account_type__account_type="Flex"))
-        .annotate(total=Coalesce(Sum(F("transaction__amount_spent")), Decimal(0)))
+        .annotate(total=Coalesce(Sum(F("allocations__amount")), Decimal(0)))
         .order_by("name")
     )
 
@@ -162,8 +168,6 @@ def account_view(request, account_id, account_type):
     }
     if account_type is MoneyAccount:
         initial_transaction["money_account"] = active_account
-    elif account_type is BudgetAccount:
-        initial_transaction["budget_account"] = active_account
     # else:
     #     money_or_budget = None
     # transaction_form = TransactionForm(initial=initial_transaction)
@@ -218,25 +222,45 @@ def update_stock_prices(request):
     user = request.user
     Stock.objects.update_market_prices()
 
-    all_stock_shares = get_stock_shares(user)
+    # Determine active account context from the request
+    account_id = request.POST.get("account_id")
+    account_type_str = request.POST.get("account_type")
+    active_account = None
+    account_type = None
+
+    if account_id and account_type_str:
+        if account_type_str == "m":
+            account_type = MoneyAccount
+            active_account = MoneyAccount.objects.filter(pk=account_id, user=user).first()
+        elif account_type_str == "b":
+            account_type = BudgetAccount
+            active_account = BudgetAccount.objects.filter(pk=account_id, user=user).first()
+
+    all_stock_shares = get_stock_shares(
+        user, active_account=active_account, account_type=account_type
+    )
     investment_balance = calculate_investment_balance(all_stock_shares)
 
-    # Recalculate stock realized gains for the user
-    stock_realized = (
-        Transaction.objects.filter(user=user)
-        .filter(
-            (
-                Q(description__contains="shares")
-                & (Q(description__contains="Buy") | Q(description__contains="Sell"))
-            )
-            | Q(description__contains="BTO")
-            | Q(description__contains="STO")
-            | Q(description__contains="BTC")
-            | Q(description__contains="STC")
-        )
-        .aggregate(spent=Coalesce(Sum("amount_spent"), Decimal(0)))
-        .get("spent", 0)
+    # Recalculate stock realized gains scoped to the same account
+    stock_txn_filter = (
+        Q(description__contains="shares")
+        & (Q(description__contains="Buy") | Q(description__contains="Sell"))
+    ) | (
+        Q(description__contains="BTO")
+        | Q(description__contains="STO")
+        | Q(description__contains="BTC")
+        | Q(description__contains="STC")
     )
+
+    txn_qs = Transaction.objects.filter(user=user).filter(stock_txn_filter)
+    if active_account and account_type is MoneyAccount:
+        txn_qs = txn_qs.filter(money_account=active_account)
+    elif active_account and account_type is BudgetAccount:
+        txn_qs = txn_qs.filter(allocations__budget_account=active_account)
+
+    stock_realized = txn_qs.aggregate(
+        spent=Coalesce(Sum("amount_spent"), Decimal(0))
+    ).get("spent", 0)
     stock_gains = stock_realized + investment_balance
 
     return JsonResponse(
@@ -265,16 +289,80 @@ def create_transaction(request):
 
         money_account_id = request.POST.get("money_account")
         budget_account_id = request.POST.get("budget_account")
-        # # double check to make sure user has access to both accounts
+        # double check to make sure user has access to both accounts
         if money_account_id:
             get_object_or_404(MoneyAccount, pk=money_account_id, user=request.user)
+        budget_account_obj = None
         if budget_account_id:
-            get_object_or_404(BudgetAccount, pk=budget_account_id, user=request.user)
+            budget_account_obj = get_object_or_404(
+                BudgetAccount, pk=budget_account_id, user=request.user
+            )
+
+        # Check if split allocation data is present
+        is_split = request.POST.get("is_split") == "1"
 
         # add user to post items
         transaction = TransactionForm(request.POST)
         if transaction.is_valid():
-            transaction.save()
+            from django.db import transaction as db_transaction
+
+            if is_split:
+                # Validate split allocation sum before saving
+                total_forms = int(
+                    request.POST.get("allocation-TOTAL_FORMS", 0)
+                )
+                alloc_sum = Decimal(0)
+                alloc_rows = []
+                for i in range(total_forms):
+                    alloc_ba_id = request.POST.get(
+                        f"allocation-{i}-budget_account"
+                    )
+                    alloc_amount = request.POST.get(
+                        f"allocation-{i}-amount"
+                    )
+                    if alloc_ba_id and alloc_amount:
+                        alloc_ba = get_object_or_404(
+                            BudgetAccount,
+                            pk=alloc_ba_id,
+                            user=request.user,
+                        )
+                        alloc_desc = request.POST.get(
+                            f"allocation-{i}-description", ""
+                        )
+                        amount = Decimal(alloc_amount)
+                        alloc_sum += amount
+                        alloc_rows.append((alloc_ba, amount, alloc_desc))
+
+                txn_amount = transaction.cleaned_data["amount_spent"]
+                if alloc_sum != txn_amount:
+                    messages.error(
+                        request,
+                        f"Split allocation amounts (${alloc_sum}) must equal "
+                        f"the transaction amount (${txn_amount})",
+                    )
+                    if money_or_budget == "m":
+                        return account_page_reverse(money_or_budget, money_account_id)
+                    return account_page_reverse(money_or_budget, budget_account_id)
+
+                with db_transaction.atomic():
+                    txn = transaction.save()
+                    for alloc_ba, amount, alloc_desc in alloc_rows:
+                        BudgetAllocation.objects.create(
+                            transaction=txn,
+                            budget_account=alloc_ba,
+                            amount=amount,
+                            description=alloc_desc,
+                        )
+            else:
+                with db_transaction.atomic():
+                    txn = transaction.save()
+                    if budget_account_obj:
+                        # Single allocation (default mode)
+                        BudgetAllocation.objects.create(
+                            transaction=txn,
+                            budget_account=budget_account_obj,
+                            amount=txn.amount_spent,
+                        )
             messages.success(
                 request,
                 "{} transaction has been added".format(request.POST["description"]),
@@ -341,12 +429,22 @@ def transfer_transaction(request):
         if from_account["money_or_budget"] == "m":
             from_trans.money_account = from_account_object
             to_trans.money_account = to_account_object
-        elif from_account["money_or_budget"] == "b":
-            from_trans.budget_account = from_account_object
-            to_trans.budget_account = to_account_object
 
         from_trans.save()
         to_trans.save()
+
+        if from_account["money_or_budget"] == "b":
+            # Budget account transfers: create allocations
+            BudgetAllocation.objects.create(
+                transaction=from_trans,
+                budget_account=from_account_object,
+                amount=from_trans.amount_spent,
+            )
+            BudgetAllocation.objects.create(
+                transaction=to_trans,
+                budget_account=to_account_object,
+                amount=to_trans.amount_spent,
+            )
         messages.success(
             request,
             "Transferred ${:.2f} from {} to {}".format(
@@ -367,6 +465,32 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         transaction_id = re.search("trans/(.*)/edit", path).group(1)  # type: ignore[union-attr]
         return Transaction.objects.filter(pk=transaction_id, user=self.request.user)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["allocation_formset"] = ValidatedAllocationFormSet(
+                self.request.POST, instance=self.object
+            )
+        else:
+            context["allocation_formset"] = ValidatedAllocationFormSet(
+                instance=self.object
+            )
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        allocation_formset = context["allocation_formset"]
+        if allocation_formset.is_valid():
+            from django.db import transaction as db_transaction
+
+            with db_transaction.atomic():
+                self.object = form.save()
+                allocation_formset.instance = self.object
+                allocation_formset.save()
+            return super().form_valid(form)
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
+
     def get_success_url(self):
         messages.success(
             self.request,
@@ -375,12 +499,12 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         if self.money_or_budget == "m":
             return reverse("budget:money_account", args=[self.object.money_account.id])
         elif self.money_or_budget == "b":
-            return reverse(
-                "budget:budget_account", args=[self.object.budget_account.id]
-            )
-        else:
-            return reverse("budget:all_accounts")
-            pass
+            first_alloc = self.object.allocations.first()
+            if first_alloc:
+                return reverse(
+                    "budget:budget_account", args=[first_alloc.budget_account_id]
+                )
+        return reverse("budget:all_accounts")
 
 
 class TransactionDeleteView(LoginRequiredMixin, DeleteView):
@@ -400,12 +524,12 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
         if self.money_or_budget == "m":
             return reverse("budget:money_account", args=[self.object.money_account.id])
         elif self.money_or_budget == "b":
-            return reverse(
-                "budget:budget_account", args=[self.object.budget_account.id]
-            )
-        else:
-            return reverse("budget:all_accounts")
-            pass
+            first_alloc = self.object.allocations.first()
+            if first_alloc:
+                return reverse(
+                    "budget:budget_account", args=[first_alloc.budget_account_id]
+                )
+        return reverse("budget:all_accounts")
 
 
 class BudgetAccountCreateView(LoginRequiredMixin, CreateView):
