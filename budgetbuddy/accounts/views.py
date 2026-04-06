@@ -10,9 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import F, Q, Sum
 from django.db.models.functions import Coalesce
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from budgetbuddy.accounts.forms import (
@@ -22,7 +23,7 @@ from budgetbuddy.accounts.forms import (
 )
 from budgetbuddy.accounts.models import BudgetAccount, MoneyAccount, Transaction
 from budgetbuddy.accounts.utils import get_date_range, get_transactions
-from budgetbuddy.stocks.models import StockTransaction
+from budgetbuddy.stocks.models import Stock, StockTransaction
 from budgetbuddy.stocks.utils import calculate_investment_balance, get_stock_shares
 
 
@@ -198,12 +199,52 @@ def account_view(request, account_id, account_type):
         "start_date": start_date,
         "end_date": end_date,
         "balance": balance,
-        "investment_balance": calculate_investment_balance(all_stock_shares),
+        "investment_balance": investment_balance,
         "time_frame_spent": subset_spent,
         "transaction_form": initial_transaction,
         "stock_gains": potential_gain,
     }
     return render(request, "accounts/account.html", context)
+
+
+@login_required
+@require_POST
+def update_stock_prices(request):
+    """AJAX endpoint to refresh stock prices asynchronously.
+
+    Triggers Yahoo Finance price updates for stale stocks, then returns
+    the updated investment balance for the requesting user.
+    """
+    user = request.user
+    Stock.objects.update_market_prices()
+
+    all_stock_shares = get_stock_shares(user)
+    investment_balance = calculate_investment_balance(all_stock_shares)
+
+    # Recalculate stock realized gains for the user
+    stock_realized = (
+        Transaction.objects.filter(user=user)
+        .filter(
+            (
+                Q(description__contains="shares")
+                & (Q(description__contains="Buy") | Q(description__contains="Sell"))
+            )
+            | Q(description__contains="BTO")
+            | Q(description__contains="STO")
+            | Q(description__contains="BTC")
+            | Q(description__contains="STC")
+        )
+        .aggregate(spent=Coalesce(Sum("amount_spent"), Decimal(0)))
+        .get("spent", 0)
+    )
+    stock_gains = stock_realized + investment_balance
+
+    return JsonResponse(
+        {
+            "investment_balance": float(investment_balance),
+            "stock_gains": float(stock_gains),
+        }
+    )
 
 
 def account_page_reverse(money_or_budget, account_id):

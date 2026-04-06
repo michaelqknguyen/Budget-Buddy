@@ -78,7 +78,7 @@ class BudgetAccount(Account):
 class Transaction(models.Model):
     description = models.CharField(max_length=200)
     notes = models.TextField(null=True, blank=True)
-    transaction_date = models.DateField()
+    transaction_date = models.DateField(db_index=True)
     amount_spent = models.DecimalField(max_digits=10, decimal_places=2)
     money_account = models.ForeignKey(
         MoneyAccount, null=True, blank=True, on_delete=models.DO_NOTHING

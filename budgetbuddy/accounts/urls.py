@@ -6,6 +6,11 @@ app_name = "budget"
 urlpatterns = [
     path("", views.index, name="budget"),
     path("all", views.all_accounts, name="all_accounts"),
+    path(
+        "api/update-stock-prices/",
+        views.update_stock_prices,
+        name="update_stock_prices",
+    ),
     path("b/<int:account_id>", views.budget_account, name="budget_account"),
     path(
         "b/create",
