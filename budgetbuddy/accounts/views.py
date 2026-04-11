@@ -152,8 +152,10 @@ def account_view(request, account_id, account_type):
         transaction_date__range=(start_date, end_date)
     )
     # subset_stock_transactions = all_stock_transactions.filter(transaction_date__range=(start_date, end_date))
+    # Include transfers where this account is either source or destination
     subset_stock_transactions = StockTransaction.objects.filter(
-        shares__in=all_stock_shares, transaction_date__range=(start_date, end_date)
+        Q(shares__in=all_stock_shares) | Q(to_shares__in=all_stock_shares),
+        transaction_date__range=(start_date, end_date)
     ).select_related("shares")
     # exclude paycheck contributions from the "spent" calculation
     subset_spent = (
