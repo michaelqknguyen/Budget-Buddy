@@ -246,10 +246,11 @@
     <!-- Card Content - Collapse -->
     <div class="collapse" id="collapseCardExample3">
       <div class="card-body">
-        <form action="{% url 'stocks:transaction_create' %}" method="POST">
+        <form action="{% url 'stocks:transaction_create' %}" method="POST" id="stock-transaction-form">
           {% csrf_token %}
           <input type="hidden" name="money_or_budget" value="{{ active_account.money_or_budget }}">
           <input type="hidden" name="user" value="{{ user.id }}">
+          <input type="hidden" name="price_confirmed" id="price_confirmed" value="false">
           <div class="form-row align-items-center">
             <div class="col-auto">
               <label class="sr-only" for="transaction_date">Transaction Date</label>
@@ -257,11 +258,11 @@
             </div>
             <div class="col-auto">
               <label class="sr-only" for="ticker">Stock Ticker</label>
-              <input type="text" class="form-control mb-2" name="ticker" placeholder="Stock Ticker, AAPL, MSFT..">
+              <input type="text" class="form-control mb-2" id="stock-ticker-input" name="ticker" placeholder="Stock Ticker, AAPL, MSFT..">
             </div>
             <div class="col-auto">
               <label class="sr-only" data-error="wrong" data-success="right" for="transaction_type">Type</label>
-              <select class="form-control mb-2" name="transaction_type" required>
+              <select class="form-control mb-2" id="transaction-type-select" name="transaction_type" required>
                 <option disabled>-- buy or sell --</option>
                 <option value="B" selected>Buy</option>
                 <option value="S">Sell</option>
@@ -269,7 +270,7 @@
             </div>
             <div class="col-auto">
               <label class="sr-only" for="num_shares">Num Shares</label>
-              <input type="text" class="form-control mb-2" name="num_shares" placeholder="Number of shares">
+              <input type="text" class="form-control mb-2" id="num-shares-input" name="num_shares" placeholder="Number of shares">
             </div>
             <div class="col-auto">
               <label class="sr-only" for="price">Amount</label>
@@ -277,7 +278,7 @@
                 <div class="input-group-prepend">
                   <div class="input-group-text">$</div>
                 </div>
-                <input type="number" step=".0001" class="form-control" name="price" id="moneyInput" placeholder="0.00" required>
+                <input type="number" step=".0001" class="form-control" id="price-input" name="price" placeholder="0.00" required>
               </div>
             </div>
             <div class="col-auto">
@@ -311,8 +312,16 @@
               </select>
             </div>
             <div class="col-auto">
-              <button type="submit" class="btn btn-primary mb-2">Submit</button>
+              <button type="submit" class="btn btn-primary mb-2" id="stock-transaction-submit">Submit</button>
             </div>
+          </div>
+          
+          <!-- Validation warnings -->
+          <div id="stock-insufficient-shares-warning" class="alert alert-danger mt-2" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i> <span id="stock-insufficient-shares-message"></span>
+          </div>
+          <div id="stock-price-warning" class="alert alert-warning mt-2" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i> <span id="stock-price-warning-message"></span>
           </div>
         </form>
       </div>
@@ -511,7 +520,17 @@
             <tr>
               <td>{{ transaction.transaction_date | date:"Y-m-d" }}</td>
               <td>{{ transaction.shares }}</td>
-              <td>{{ transaction.transaction_type }}</td>
+              <td>
+                {% if transaction.transaction_type == 'T' %}
+                  {% if transaction.shares in stock_shares.all %}
+                    Transfer to {{ transaction.to_shares.budget_account.name }}
+                  {% else %}
+                    Transfer from {{ transaction.shares.budget_account.name }}
+                  {% endif %}
+                {% else %}
+                  {{ transaction.get_transaction_type_display }}
+                {% endif %}
+              </td>
               <td>{{ transaction.num_shares }}</td>
               <td>${{ transaction.price | intcomma }}</td>
               <td>
@@ -697,6 +716,136 @@
   })
   .catch(function() {
     // Silently ignore errors -- keep last-known values displayed
+  });
+})();
+</script>
+<script>
+// Stock transaction price validation and real-time warnings
+(function() {
+  var form = document.getElementById('stock-transaction-form');
+  if (!form) return;
+
+  var tickerInput = document.getElementById('stock-ticker-input');
+  var transactionTypeSelect = document.getElementById('transaction-type-select');
+  var numSharesInput = document.getElementById('num-shares-input');
+  var priceInput = document.getElementById('price-input');
+  var submitBtn = document.getElementById('stock-transaction-submit');
+  var insufficientSharesWarning = document.getElementById('stock-insufficient-shares-warning');
+  var insufficientSharesMessage = document.getElementById('stock-insufficient-shares-message');
+  var priceWarning = document.getElementById('stock-price-warning');
+  var priceWarningMessage = document.getElementById('stock-price-warning-message');
+
+  // Build stock price and holdings map from current holdings
+  var stockPrices = {
+    {% for share in stock_shares %}
+    '{{ share.stock.ticker }}': {{ share.stock.market_price|default:"null" }},
+    {% endfor %}
+  };
+  
+  var stockHoldings = {
+    {% for share in stock_shares %}
+    '{{ share.stock.ticker }}': {{ share.num_shares }},
+    {% endfor %}
+  };
+
+  // Real-time validation
+  function validateForm() {
+    var ticker = tickerInput.value.toUpperCase();
+    var transactionType = transactionTypeSelect.value;
+    var numShares = parseFloat(numSharesInput.value) || 0;
+    var enteredPrice = parseFloat(priceInput.value) || 0;
+    var hasWarnings = false;
+    
+    // Check insufficient shares for sell
+    if (transactionType === 'S' && numShares > 0 && ticker) {
+      var availableShares = stockHoldings[ticker] || 0;
+      if (numShares > availableShares) {
+        insufficientSharesMessage.textContent = 
+          `Cannot sell ${numShares} shares. Only ${availableShares} shares available for ${ticker}.`;
+        insufficientSharesWarning.style.display = 'block';
+        hasWarnings = true;
+      } else {
+        insufficientSharesWarning.style.display = 'none';
+      }
+    } else {
+      insufficientSharesWarning.style.display = 'none';
+    }
+    
+    // Check price divergence
+    if (enteredPrice > 0 && ticker) {
+      var marketPrice = stockPrices[ticker];
+      if (marketPrice) {
+        var ratio = enteredPrice / marketPrice;
+        if (ratio < 0.5 || ratio > 2.0) {
+          priceWarningMessage.textContent = 
+            `Entered price $${enteredPrice.toFixed(2)} differs significantly from market price $${marketPrice.toFixed(2)}. You'll be asked to confirm.`;
+          priceWarning.style.display = 'block';
+          // Don't block submission, just warn - confirmation happens on submit
+        } else {
+          priceWarning.style.display = 'none';
+        }
+      } else {
+        priceWarning.style.display = 'none';
+      }
+    } else {
+      priceWarning.style.display = 'none';
+    }
+    
+    // Disable submit if there are blocking warnings
+    if (hasWarnings) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('btn-secondary');
+      submitBtn.classList.remove('btn-primary');
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.classList.add('btn-primary');
+      submitBtn.classList.remove('btn-secondary');
+    }
+  }
+  
+  // Attach listeners for real-time validation
+  if (tickerInput) tickerInput.addEventListener('input', validateForm);
+  if (transactionTypeSelect) transactionTypeSelect.addEventListener('change', validateForm);
+  if (numSharesInput) numSharesInput.addEventListener('input', validateForm);
+  if (priceInput) priceInput.addEventListener('input', validateForm);
+
+  // Submit validation with price confirmation
+  form.addEventListener('submit', function(e) {
+    var priceConfirmed = document.getElementById('price_confirmed').value === 'true';
+    
+    // If already confirmed, allow submission
+    if (priceConfirmed) {
+      return true;
+    }
+
+    var ticker = tickerInput.value.toUpperCase();
+    var enteredPrice = parseFloat(priceInput.value);
+    var marketPrice = stockPrices[ticker];
+
+    // Skip validation if no market price available or invalid input
+    if (!marketPrice || !enteredPrice || enteredPrice <= 0) {
+      return true;
+    }
+
+    // Check if price differs significantly (< 50% or > 200%)
+    var ratio = enteredPrice / marketPrice;
+    if (ratio < 0.5 || ratio > 2.0) {
+      e.preventDefault();
+      
+      var message = 'Warning: Entered price $' + enteredPrice.toFixed(2) + 
+                    ' differs significantly from market price $' + marketPrice.toFixed(2) + 
+                    '.\n\nDo you want to proceed with this price?';
+      
+      if (confirm(message)) {
+        // User confirmed, set flag and resubmit
+        document.getElementById('price_confirmed').value = 'true';
+        form.submit();
+      }
+      
+      return false;
+    }
+
+    return true;
   });
 })();
 </script>

@@ -86,13 +86,22 @@ class StockTransaction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     BUY = "B"
     SELL = "S"
+    TRANSFER = "T"
     TRANSACTION_CHOICES = [
         (BUY, "Buy"),
         (SELL, "Sell"),
+        (TRANSFER, "Transfer"),
     ]
 
     shares = models.ForeignKey(
         StockShares, on_delete=models.DO_NOTHING, related_name="transactions"
+    )
+    to_shares = models.ForeignKey(
+        StockShares,
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        related_name="transfers_in",
     )
     transaction_date = models.DateField()
     transaction_type = models.CharField(max_length=2, choices=TRANSACTION_CHOICES)

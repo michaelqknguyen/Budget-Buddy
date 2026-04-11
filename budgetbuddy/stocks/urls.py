@@ -6,6 +6,7 @@ app_name = "stocks"
 urlpatterns = [
     # path('create', views.StockTransactionCreateView.as_view(), name='transaction_create'),
     # path('', views.index, name='stock'),
+    path("", views.stocks_page, name="stocks_page"),
     # path('all', views.all_accounts, name='all_accounts'),
     # path('b/<int:account_id>', views.budget_account, name='budget_account'),
     # path('b/create', views.BudgetAccountCreateView.as_view(), name='budget_account_create'),
@@ -14,6 +15,7 @@ urlpatterns = [
     # path('m/create', views.MoneyAccountCreateView.as_view(), name='money_account_create'),
     # path('m/<int:pk>/edit', views.MoneyAccountUpdateView.as_view(), name='money_account_edit'),
     path("trans/create", views.create_stock_transaction, name="transaction_create"),
+    path("transfer", views.transfer_stock, name="transfer_stock"),
     # path('trans/transfer', views.transfer_transaction, name='transaction_transfer'),
     # indicate whether to return to budget account page, money account, or all page
     path(

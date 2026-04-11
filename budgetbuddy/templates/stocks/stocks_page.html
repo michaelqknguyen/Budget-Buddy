@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Stocks - Budget Buddy{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Stock Holdings</h1>
+</div>
+
+<!-- Stock Holdings Overview -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">All Stock Holdings</h6>
+    </div>
+    <div class="card-body">
+      <!-- Filter Form -->
+      <form method="get" class="form-inline mb-3">
+        <div class="form-group mr-2">
+          <input type="text" name="ticker" class="form-control" placeholder="Ticker" value="{{ filter_ticker }}">
+        </div>
+        <div class="form-group mr-2">
+          <select name="budget_account" class="form-control">
+            <option value="">All Budget Accounts</option>
+            {% for account in budget_accounts %}
+              <option value="{{ account.id }}" {% if filter_budget_account == account.id|stringformat:'s' %}selected{% endif %}>{{ account.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </form>
+      {% if stock_shares %}
+        <div class="table-responsive">
+          <table class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Shares</th>
+                <th>Market Price</th>
+                <th>Market Value</th>
+                <th>Budget Account</th>
+                <th>Brokerage Account</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for share in stock_shares %}
+              <tr>
+                <td><strong>{{ share.stock.ticker }}</strong></td>
+                <td>{{ share.num_shares }}</td>
+                <td>${{ share.stock.market_price|default:"N/A"|intcomma }}</td>
+                <td>
+                  {% if share.stock.market_price %}
+                    ${{ share.shares_value|floatformat:2|intcomma }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td>{{ share.budget_account.name }}</td>
+                <td>{{ share.brokerage_account.name }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination Controls -->
+        <nav aria-label="Stock Holdings pagination">
+          <ul class="pagination mt-3">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if filter_ticker %}ticker={{ filter_ticker }}&amp;{% endif %}{% if filter_budget_account %}budget_account={{ filter_budget_account }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if filter_ticker %}ticker={{ filter_ticker }}&amp;{% endif %}{% if filter_budget_account %}budget_account={{ filter_budget_account }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% else %}
+        <p class="text-muted">No stock holdings found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock Transfer Form -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Transfer Stock Between Accounts</h6>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'stocks:transfer_stock' %}" id="transfer-form">
+          {% csrf_token %}
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="source_budget_account">Source Budget Account</label>
+              <select class="form-control" id="source_budget_account" name="source_budget_account" required>
+                <option value="">Select source account...</option>
+                {% for data in budget_account_data %}
+                <option value="{{ data.account.id }}" 
+                        data-cash="{{ data.cash_balance }}" 
+                        data-investment="{{ data.investment_sum }}"
+                        {% if form_data.source_budget_account == data.account.id|stringformat:"s" %}selected{% endif %}>
+                  {{ data.account.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted" id="source-balance">
+                Cash: $0.00 | Stocks: $0.00
+              </small>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="destination_budget_account">Destination Budget Account</label>
+              <select class="form-control" id="destination_budget_account" name="destination_budget_account" required>
+                <option value="">Select destination account...</option>
+                {% for data in budget_account_data %}
+                <option value="{{ data.account.id }}" 
+                        data-cash="{{ data.cash_balance }}" 
+                        data-investment="{{ data.investment_sum }}"
+                        {% if form_data.destination_budget_account == data.account.id|stringformat:"s" %}selected{% endif %}>
+                  {{ data.account.name }}
+                </option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted" id="dest-balance">
+                Cash: $0.00 | Stocks: $0.00
+              </small>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="ticker">Stock</label>
+              <select class="form-control" id="ticker" name="ticker" required>
+                <option value="">Select stock...</option>
+                {% for stock in user_stocks %}
+                <option value="{{ stock.ticker }}" {% if form_data.ticker == stock.ticker %}selected{% endif %}>{{ stock.ticker }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted" id="available-shares">
+                Available shares: 0
+              </small>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="num_shares">Number of Shares</label>
+              <input type="number" step="0.00000001" class="form-control" id="num_shares" name="num_shares" value="{{ form_data.num_shares }}" required>
+              <small class="form-text text-muted" id="shares-validation"></small>
+            </div>
+          </div>
+          
+          <!-- Validation warnings -->
+          <div id="same-account-warning" class="alert alert-warning" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i> Source and destination accounts must be different.
+          </div>
+          <div id="insufficient-shares-warning" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i> <span id="insufficient-shares-message"></span>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="transfer-submit-btn">Transfer Shares</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer History -->
+<div class="row">
+  <div class="col-lg-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Transfer History</h6>
+      </div>
+      <div class="card-body">
+        {% if transfer_history %}
+        <div class="table-responsive">
+          <table class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Ticker</th>
+                <th>Shares</th>
+                <th>Source Account</th>
+                <th>Destination Account</th>
+                <th>Value at Transfer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transfer in transfer_history %}
+              <tr>
+                <td>{{ transfer.transaction_date|date:"Y-m-d" }}</td>
+                <td><strong>{{ transfer.shares.stock.ticker }}</strong></td>
+                <td>{{ transfer.num_shares }}</td>
+                <td>{{ transfer.shares.budget_account.name }}</td>
+                <td>{{ transfer.to_shares.budget_account.name }}</td>
+                <td>${{ transfer.transfer_value|floatformat:2|intcomma }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No transfer history.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sourceSelect = document.getElementById('source_budget_account');
+  const destSelect = document.getElementById('destination_budget_account');
+  const tickerSelect = document.getElementById('ticker');
+  const numSharesInput = document.getElementById('num_shares');
+  const sourceBalance = document.getElementById('source-balance');
+  const destBalance = document.getElementById('dest-balance');
+  const availableShares = document.getElementById('available-shares');
+  const submitBtn = document.getElementById('transfer-submit-btn');
+  const sameAccountWarning = document.getElementById('same-account-warning');
+  const insufficientSharesWarning = document.getElementById('insufficient-shares-warning');
+  const insufficientSharesMessage = document.getElementById('insufficient-shares-message');
+  
+  // Stock shares data by budget account and ticker
+  const stockSharesData = {
+    {% for share in stock_shares %}
+    '{{ share.budget_account.id }}_{{ share.stock.ticker }}': {{ share.num_shares }},
+    {% endfor %}
+  };
+  
+  // Update displayed balances when account selection changes
+  function updateAccountBalance(selectElement, displayElement) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+      const cash = parseFloat(selectedOption.dataset.cash) || 0;
+      const investment = parseFloat(selectedOption.dataset.investment) || 0;
+      displayElement.textContent = `Cash: $${cash.toFixed(2)} | Stocks: $${investment.toFixed(2)}`;
+    } else {
+      displayElement.textContent = 'Cash: $0.00 | Stocks: $0.00';
+    }
+  }
+  
+  // Update available shares based on selected account and stock
+  function updateAvailableShares() {
+    const sourceAccountId = sourceSelect.value;
+    const ticker = tickerSelect.value;
+    
+    if (sourceAccountId && ticker) {
+      const key = `${sourceAccountId}_${ticker}`;
+      const shares = stockSharesData[key] || 0;
+      availableShares.textContent = `Available shares: ${shares}`;
+      return shares;
+    } else {
+      availableShares.textContent = 'Available shares: 0';
+      return 0;
+    }
+  }
+  
+  // Validate form and show warnings
+  function validateForm() {
+    let isValid = true;
+    
+    // Check if source and destination are the same
+    if (sourceSelect.value && destSelect.value && sourceSelect.value === destSelect.value) {
+      sameAccountWarning.style.display = 'block';
+      isValid = false;
+    } else {
+      sameAccountWarning.style.display = 'none';
+    }
+    
+    // Check for insufficient shares
+    const requestedShares = parseFloat(numSharesInput.value) || 0;
+    const availableSharesCount = updateAvailableShares();
+    
+    if (requestedShares > 0 && availableSharesCount > 0 && requestedShares > availableSharesCount) {
+      insufficientSharesMessage.textContent = `You requested ${requestedShares} shares but only ${availableSharesCount} are available.`;
+      insufficientSharesWarning.style.display = 'block';
+      isValid = false;
+    } else {
+      insufficientSharesWarning.style.display = 'none';
+    }
+    
+    // Disable/enable submit button based on validation
+    submitBtn.disabled = !isValid;
+    if (!isValid) {
+      submitBtn.classList.add('btn-secondary');
+      submitBtn.classList.remove('btn-primary');
+    } else {
+      submitBtn.classList.add('btn-primary');
+      submitBtn.classList.remove('btn-secondary');
+    }
+    
+    return isValid;
+  }
+  
+  // Attach event listeners
+  sourceSelect.addEventListener('change', function() {
+    updateAccountBalance(sourceSelect, sourceBalance);
+    validateForm();
+  });
+  
+  destSelect.addEventListener('change', function() {
+    updateAccountBalance(destSelect, destBalance);
+    validateForm();
+  });
+  
+  tickerSelect.addEventListener('change', function() {
+    validateForm();
+  });
+  
+  numSharesInput.addEventListener('input', function() {
+    validateForm();
+  });
+  
+  // If form was repopulated with preserved data, update displays
+  if (sourceSelect.value) {
+    updateAccountBalance(sourceSelect, sourceBalance);
+    validateForm();
+  }
+  if (destSelect.value) {
+    updateAccountBalance(destSelect, destBalance);
+  }
+  if (tickerSelect.value || numSharesInput.value) {
+    validateForm();
+  }
+});
+</script>
+{% endblock content %}
