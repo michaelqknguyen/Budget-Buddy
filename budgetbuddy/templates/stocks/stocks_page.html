@@ -13,11 +13,26 @@
 <div class="row">
   <div class="col-lg-12">
     <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">All Stock Holdings</h6>
-      </div>
-      <div class="card-body">
-        {% if stock_shares %}
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">All Stock Holdings</h6>
+    </div>
+    <div class="card-body">
+      <!-- Filter Form -->
+      <form method="get" class="form-inline mb-3">
+        <div class="form-group mr-2">
+          <input type="text" name="ticker" class="form-control" placeholder="Ticker" value="{{ filter_ticker }}">
+        </div>
+        <div class="form-group mr-2">
+          <select name="budget_account" class="form-control">
+            <option value="">All Budget Accounts</option>
+            {% for account in budget_accounts %}
+              <option value="{{ account.id }}" {% if filter_budget_account == account.id|stringformat:'s' %}selected{% endif %}>{{ account.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </form>
+      {% if stock_shares %}
         <div class="table-responsive">
           <table class="table table-bordered" width="100%" cellspacing="0">
             <thead>
@@ -50,6 +65,26 @@
             </tbody>
           </table>
         </div>
+        <!-- Pagination Controls -->
+        <nav aria-label="Stock Holdings pagination">
+          <ul class="pagination mt-3">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if filter_ticker %}ticker={{ filter_ticker }}&amp;{% endif %}{% if filter_budget_account %}budget_account={{ filter_budget_account }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if filter_ticker %}ticker={{ filter_ticker }}&amp;{% endif %}{% if filter_budget_account %}budget_account={{ filter_budget_account }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+          </ul>
+        </nav>
         {% else %}
         <p class="text-muted">No stock holdings found.</p>
         {% endif %}

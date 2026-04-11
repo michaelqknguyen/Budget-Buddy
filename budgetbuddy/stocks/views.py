@@ -227,7 +227,7 @@ def stocks_page(request):
         
         investment_sum = sum(
             (share.num_shares * (share.stock.market_price or 0))
-            for share in all_stock_shares.filter(budget_account=account)
+            for share in stock_shares_qs.filter(budget_account=account)
         )
         
         budget_account_data.append({
@@ -260,7 +260,12 @@ def stocks_page(request):
     form_data = getattr(request, 'preserved_form_data', {})
     
     context = {
-        'stock_shares': all_stock_shares,
+        'stock_shares': stock_shares_page,
+        'paginator': paginator,
+        'page_obj': stock_shares_page,
+        'filter_ticker': ticker,
+        'filter_budget_account': budget_account_id,
+        'filter_brokerage_account': brokerage_account_id,
         'budget_account_data': budget_account_data,
         'budget_accounts': budget_accounts,
         'transfer_history': transfer_history,
