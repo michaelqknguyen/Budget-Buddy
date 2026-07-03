@@ -138,9 +138,18 @@ def account_view(request, account_id, account_type):
     )
     # all_stock_transactions = StockTransaction.objects.filter(shares__in=all_stock_shares)
     if account_id:
-        balance = all_transactions.aggregate(
-            balance=Coalesce(Sum("amount_spent"), Decimal(0))
-        ).get("balance", Decimal(0))
+        # Calculate balance using allocation amounts for budget accounts
+        # or transaction amounts for money accounts
+        if account_type is BudgetAccount:
+            balance = BudgetAllocation.objects.filter(
+                budget_account=active_account
+            ).aggregate(
+                balance=Coalesce(Sum("amount"), Decimal(0))
+            ).get("balance", Decimal(0))
+        else:
+            balance = all_transactions.aggregate(
+                balance=Coalesce(Sum("amount_spent"), Decimal(0))
+            ).get("balance", Decimal(0))
     else:
         # only consider actual money account balances for balance calc for all account view
         balance = (
